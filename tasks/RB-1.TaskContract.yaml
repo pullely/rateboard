@@ -1,0 +1,13 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: RB-1
+spec:
+  goal: The Rateboard epic's five design documents — including the cross-tenant benchmark's security design (design §6, k = 5) — are on main and attached to the epic in Orunbase.
+  affects:
+    - specs/epics/rateboard-sponsor-pipeline
+    - tasks
+  doneWhen:
+    - specs/epics/rateboard-sponsor-pipeline holds README.md, design.md, implementation-plan.md, risks-and-open-questions.md and IMPLEMENTATION-STATUS.md on main
+    - orun spec list --epic rateboard-sponsor-pipeline shows all five documents
+  gates: []
