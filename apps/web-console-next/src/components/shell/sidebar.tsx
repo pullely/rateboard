@@ -9,6 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderKanban,
+  SquareKanban,
+  CalendarDays,
+  Handshake,
   Boxes,
   KeyRound,
   Settings,
@@ -34,6 +37,9 @@ import { SidebarOrgSwitcher } from "./sidebar-org-switcher";
 import { SidebarFind } from "./sidebar-find";
 
 const ICONS: Record<string, LucideIcon> = {
+  SquareKanban,
+  CalendarDays,
+  Handshake,
   Building2,
   FolderKanban,
   Boxes,

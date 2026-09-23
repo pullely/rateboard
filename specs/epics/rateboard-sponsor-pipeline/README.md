@@ -33,7 +33,7 @@ creators charge.
 
 | Field | Value |
 |-------|-------|
-| Status | Draft |
+| Status | In progress (RB0 ✅, RB1 in review) |
 | Cluster | **RB** (RB0–RB3) |
 | Owner(s) | `apps/deal-worker` (publications, issues, slots, sponsors, deals, bookings; from RB2 insertion orders, deliveries and report links) · `apps/bench-worker` (RB3: contributions, the weekly aggregate, the published benchmark cells) · `apps/api-edge` (the facades and, from RB2, the public report lane) · `packages/db` (migrations `200`–`220`) · `packages/contracts` + `packages/sdk` (the wire) · `apps/notifications-worker` (RB2 templates) · `apps/web-console-next` (the surface) |
 | Builds on | `cirrus baseline-v12`: organizations as a creator's business or an agency, members and the policy engine for who may sell, the audit trail in `events-worker`, `notifications-worker` for email, api-edge rate limiting and its public ingress lane, cron triggers |

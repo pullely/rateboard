@@ -298,6 +298,10 @@ export const NOTIFICATIONS_INTERNAL_ACTOR_VALUES = [
   // The public edge forwards end-user preference reads/updates over the
   // service binding with the subject pinned to the resolved session actor.
   "api-edge",
+  // Rateboard: deal-worker emails a sponsor their insertion order (RB2).
+  // Listed from RB1 so RB2 adds only templates. Without this entry
+  // notifications-worker refuses its calls with 403.
+  "deal-worker",
 ] as const;
 
 export type NotificationsInternalActor =
