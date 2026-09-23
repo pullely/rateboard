@@ -10,6 +10,11 @@ export const qk = {
   orgs: () => ["orgs"] as const,
   profile: () => ["profile"] as const,
   projects: (orgId: string) => ["projects", orgId] as const,
+  deals: (orgId: string) => ["deals", orgId] as const,
+  deal: (orgId: string, dealId: string) => ["deal", orgId, dealId] as const,
+  sponsors: (orgId: string) => ["sponsors", orgId] as const,
+  publications: (orgId: string) => ["publications", orgId] as const,
+  inventory: (orgId: string, range: string) => ["inventory", orgId, range] as const,
   environments: (orgId: string, projectId: string) =>
     ["environments", orgId, projectId] as const,
   members: (orgId: string) => ["members", orgId] as const,

@@ -36,12 +36,42 @@ export function memberPublicId(uuid: string): string {
   return `mem_${uuidToHex(uuid)}`;
 }
 
+export function dealPublicationPublicId(uuid: string): string {
+  return `rbp_${uuidToHex(uuid)}`;
+}
+
+export function dealIssuePublicId(uuid: string): string {
+  return `rbi_${uuidToHex(uuid)}`;
+}
+
+export function dealSlotPublicId(uuid: string): string {
+  return `rbs_${uuidToHex(uuid)}`;
+}
+
+export function dealSponsorPublicId(uuid: string): string {
+  return `rbn_${uuidToHex(uuid)}`;
+}
+
+export function dealDealPublicId(uuid: string): string {
+  return `rbd_${uuidToHex(uuid)}`;
+}
+
+export function dealBookingPublicId(uuid: string): string {
+  return `rbb_${uuidToHex(uuid)}`;
+}
+
 const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   organization: orgPublicId,
   project: projectPublicId,
   environment: environmentPublicId,
   invitation: invitationPublicId,
   member: memberPublicId,
+  publication: dealPublicationPublicId,
+  issue: dealIssuePublicId,
+  slot: dealSlotPublicId,
+  sponsor: dealSponsorPublicId,
+  deal: dealDealPublicId,
+  booking: dealBookingPublicId,
 };
 
 export function toPublicId(kind: string, rawId: string): string {

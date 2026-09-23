@@ -67,4 +67,4 @@ spec:
     surface: membership
     runtime: cloudflare
 # ci: re-trigger deploy (batch A — runner-starvation recovery 20260622T115650Z)
-# orun: redeploy 04-workers-restore 20260923T225222Z
+# orun: redeploy RB1 — packages/db (trap-16 D1 fix, deal context), packages/policy-engine (deal.* actions), packages/contracts (deal-worker notifications caller)

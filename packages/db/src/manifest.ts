@@ -183,5 +183,14 @@ export const manifest: MigrationManifest = {
       description:
         "Connection pointer on the inbound-delivery inbox (nullable connection_id + partial index) — lets the per-connection delivery log scope precisely; attributed by the IG2 cron drain",
     },
+    {
+      id: "200_deal_core",
+      context: "deal",
+      path: "200_deal_core/up.sql",
+      checksum:
+        "09a2aef1c50654b320fc8305892620151aa7210d75883ef77d36d127abccd256",
+      description:
+        "Sponsor pipeline foundation (RB1) — publications with niche and audience size, their issues or episodes and ad slots, sponsors, deals through lead → pitched → booked → delivered → paid (or lost) with their stage history, and bookings of deals into slots, at most one live booking per slot (partial unique index)",
+    },
   ],
 };

@@ -1,0 +1,49 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: RB-2
+spec:
+  goal: A creator can lay out publications, issues and ad slots, log sponsors and deals, move a deal lead → pitched → booked → delivered → paid, and book deals into slots on an inventory calendar where the database refuses a second booking of a slot.
+  # Component refs, fully qualified (bare names and paths do not match — runbook
+  # trap 15). identity-worker, membership-worker, api-edge and web-console-next
+  # carry the SOLO_MODE switch (Solo goes off: an agency's staff share an org).
+  # Every other worker is here for runbook trap 17: this task changes
+  # packages/db (the trap-16 D1 fix and the deal context), packages/policy-engine
+  # (deal.* actions) and packages/contracts (the notifications allow-list), and a
+  # worker only redeploys when its own component.yaml changes.
+  affects:
+    - default/rateboard/db
+    - default/rateboard/db-tests
+    - default/rateboard/db-migrate
+    - default/rateboard/contracts
+    - default/rateboard/contracts-tests
+    - default/rateboard/sdk
+    - default/rateboard/policy-engine
+    - default/rateboard/policy-engine-tests
+    - default/rateboard/deal-worker
+    - default/rateboard/deal-worker-tests
+    - default/rateboard/api-edge
+    - default/rateboard/api-edge-tests
+    - default/rateboard/events-worker
+    - default/rateboard/notifications-worker
+    - default/rateboard/identity-worker
+    - default/rateboard/membership-worker
+    - default/rateboard/web-console-next
+    - default/rateboard/web-console-next-tests
+    - default/rateboard/admin-worker
+    - default/rateboard/billing-worker
+    - default/rateboard/config-worker
+    - default/rateboard/integrations-worker
+    - default/rateboard/metering-worker
+    - default/rateboard/policy-worker
+    - default/rateboard/projects-worker
+    - default/rateboard/webhooks-worker
+  doneWhen:
+    - the trap-16 D1 fix (factory/patches/cirrus-d1-fix.patch) is applied, so audited writes and organization create work on D1
+    - migration 200_deal_core (with the partial unique index uq_deal_bookings_live_slot) replays twice green on node:sqlite and is applied on stage and prod
+    - on stage a user creates an org (201), a publication, an issue with two slots and a sponsor, and moves a deal lead → pitched; booked is 409 no_bookings until a slot is held
+    - booking a slot answers 201; a second booking of the same slot answers 409 slot_already_booked, and in a concurrent burst exactly one claim wins
+    - the deal moves booked → delivered → paid and its stage history lists every move
+    - a signed-in non-member gets 404 on the org's deal routes; a viewer can read but not write
+    - tests/deal-worker covers the state machine, the double-booking race and the tenant boundary on real SQLite and is green in CI
+  gates: []
