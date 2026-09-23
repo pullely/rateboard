@@ -46,7 +46,11 @@
         {
           "binding": "BILLING_WORKER",
           "service": "rateboard-billing-worker-stage"
-        }// @cycle-break:membership-worker->notifications-worker:LAogICAgICAgIHsKICAgICAgICAgICJiaW5kaW5nIjogIk5PVElGSUNBVElPTlNfV09SS0VSIiwKICAgICAgICAgICJzZXJ2aWNlIjogInJhdGVib2FyZC1ub3RpZmljYXRpb25zLXdvcmtlci1zdGFnZSIKICAgICAgICB9
+        },
+        {
+          "binding": "NOTIFICATIONS_WORKER",
+          "service": "rateboard-notifications-worker-stage"
+        }
       ]
     },
     "prod": {
@@ -71,7 +75,11 @@
         {
           "binding": "BILLING_WORKER",
           "service": "rateboard-billing-worker-prod"
-        }// @cycle-break:membership-worker->notifications-worker:LAogICAgICAgIHsKICAgICAgICAgICJiaW5kaW5nIjogIk5PVElGSUNBVElPTlNfV09SS0VSIiwKICAgICAgICAgICJzZXJ2aWNlIjogInJhdGVib2FyZC1ub3RpZmljYXRpb25zLXdvcmtlci1wcm9kIgogICAgICAgIH0=
+        },
+        {
+          "binding": "NOTIFICATIONS_WORKER",
+          "service": "rateboard-notifications-worker-prod"
+        }
       ]
     }
   }
