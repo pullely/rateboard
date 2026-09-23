@@ -1,0 +1,10 @@
+{
+  "reponame": "rateboard",
+  "productname": "Rateboard",
+  "productdomain": "rateboard.app",
+  "subdomain": "nexo-7be",
+  "orunWorkspace": "ws_TZ1549ZN",
+  "githuborg": "pullely",
+  "epicSlug": "infra-baselining",
+  "domain": false
+}
