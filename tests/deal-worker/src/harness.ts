@@ -94,21 +94,50 @@ export function fakeFleet(): { MEMBERSHIP_WORKER: Fetcher; POLICY_WORKER: Fetche
   return { MEMBERSHIP_WORKER: membership as unknown as Fetcher, POLICY_WORKER: policy as unknown as Fetcher };
 }
 
+export interface SentEmail {
+  headers: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the enqueue body is asserted field by field
+  body: Record<string, any>;
+}
+
 export interface TestWorld {
   env: Env;
   db: DatabaseSync;
+  /** Every enqueue deal-worker posted to the notifications stand-in (RB2). */
+  emails: SentEmail[];
+  /** Flip to make the notifications stand-in refuse (503). */
+  notificationsDown: boolean;
+}
+
+/** notifications-worker stand-in: accepts like the real enqueue route (201 + a notification id). */
+function fakeNotifications(w: { emails: SentEmail[]; notificationsDown: boolean }): Fetcher {
+  return {
+    async fetch(_url: string, init: RequestInit) {
+      if (w.notificationsDown) return Response.json({ error: { code: "internal_error" } }, { status: 503 });
+      const headers = Object.fromEntries(new Headers(init.headers).entries());
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      w.emails.push({ headers, body });
+      return Response.json(
+        { data: { notification: { id: `ntf_${String(w.emails.length).padStart(32, "0")}`, status: "queued" } } },
+        { status: 201 },
+      );
+    },
+  } as unknown as Fetcher;
 }
 
 export function world(): TestWorld {
   const db = migratedDatabase();
   const fleet = fakeFleet();
-  const env = {
+  const w = { emails: [] as SentEmail[], notificationsDown: false } as TestWorld;
+  w.db = db;
+  w.env = {
     ENVIRONMENT: "test",
     PLATFORM_DB: d1Over(db),
     MEMBERSHIP_WORKER: fleet.MEMBERSHIP_WORKER,
     POLICY_WORKER: fleet.POLICY_WORKER,
+    NOTIFICATIONS_WORKER: fakeNotifications(w),
   } as Env;
-  return { env, db };
+  return w;
 }
 
 export function as(subjectId: string): Record<string, string> {

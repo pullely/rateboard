@@ -26,6 +26,10 @@ describe("the pipeline", () => {
     expect(booked.deal.liveBookings).toBe(1);
 
     for (const to of ["booked", "delivered", "paid"]) {
+      // RB2: delivered needs a delivery on every live booking.
+      if (to === "delivered") {
+        await ok(await send(w, `/v1/organizations/${ORG}/deals/${deal.id}/bookings/${booked.booking.id}/delivery`, OWNER, { deliveredOn: "2026-10-06" }, "PUT"));
+      }
       expect((await ok(await move(w, deal.id, to))).deal.stage).toBe(to);
     }
     const detail = await ok(await get(w, `/v1/organizations/${ORG}/deals/${deal.id}`, VIEWER));
