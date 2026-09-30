@@ -114,9 +114,9 @@ export function grant(w: World, org: string, subject: string, role: "owner" | "a
 }
 
 export interface BookingSpec {
-  niche?: string;
-  audience?: number;
-  format?: string;
+  niche?: string | undefined;
+  audience?: number | undefined;
+  format?: string | undefined;
   price: number;
   currency?: string;
   stage?: string;
@@ -172,7 +172,7 @@ export const LONG_AGO = "2026-08-01T00:00:00.000Z";
 export function contributor(
   w: World,
   prices: number[],
-  opts: { owner?: string; optedInAt?: string; niche?: string; audience?: number; format?: string } = {},
+  opts: { owner?: string; optedInAt?: string; niche?: string | undefined; audience?: number | undefined; format?: string | undefined } = {},
 ): { org: string; owner: string } {
   const org = uuid();
   const owner = opts.owner ?? uuid();

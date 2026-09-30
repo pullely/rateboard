@@ -369,9 +369,18 @@ describe("§6.7.8 boundary", () => {
       ["deal/paperwork-types.ts", "PaperworkRepository"],
       ["bench/types.ts", "BenchRepository"],
     ];
+    const allTypes = repos.map(([file]) => readFileSync(join(db, file), "utf8")).join("\n");
+    // A parameter typed by a named input (e.g. `input: MoveStageInput`) carries orgId when that type declares it.
+    const typeHasOrgId = (name: string): boolean => {
+      const m = new RegExp(`(?:interface|type)\\s+${name}\\b[^{]*\\{([\\s\\S]*?)\\n\\}`).exec(allTypes);
+      return !!m && /\borgId\b/.test(m[1]!);
+    };
     const withoutOrg: string[] = [];
     for (const [file, iface] of repos) {
-      for (const m of methodsOf(readFileSync(join(db, file), "utf8"), iface)) if (!/orgId/.test(m.params)) withoutOrg.push(`${iface}.${m.name}`);
+      for (const m of methodsOf(readFileSync(join(db, file), "utf8"), iface)) {
+        const named = [...m.params.matchAll(/:\s*([A-Z]\w+)/g)].map((x) => x[1]!);
+        if (!/orgId/.test(m.params) && !named.some(typeHasOrgId)) withoutOrg.push(`${iface}.${m.name}`);
+      }
     }
     // Of these, only the bench ones below touch deal_* tables at all; each bench
     // method's SQL is checked next.
