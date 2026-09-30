@@ -1,0 +1,12 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: RB-5
+spec:
+  goal: The Rateboard epic records itself as shipped, with the evidence for every milestone.
+  # Docs only (runbook trap 28): README Shipped, plan and status; no component changes.
+  affects: []
+  doneWhen:
+    - README says Shipped with Shipped as filled in
+    - IMPLEMENTATION-STATUS carries the RB3 deploy and the stage and prod verification of every milestone
+  gates: []

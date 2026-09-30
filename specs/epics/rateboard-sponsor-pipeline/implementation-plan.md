@@ -98,7 +98,9 @@ Landed as #11 (a58ccee); deploy run 36657548641 green 60/60; stage and prod veri
 - tests pin the IO numbering under a concurrent race, the delivery rule, and
   that the token is stored only as a hash
 
-## RB3 — opt-in rate benchmarks
+## RB3 — opt-in rate benchmarks ✅
+
+Landed as #12 (1e1d34d); deploy run 36660379116 green 69/69 (attempt 2, after a transient OIDC-exchange timeout); stage and prod verified. The epic is shipped.
 
 - Migration `220_bench_core`: `bench_contributions`, `bench_runs`,
   `bench_cells` (the published output, exactly the design §6.5 fields) and
