@@ -7,7 +7,16 @@ export interface AuditActor {
 }
 
 /** Audit subjects this worker writes; events-worker maps each to its public id prefix. */
-export type DealSubjectKind = "publication" | "issue" | "slot" | "sponsor" | "deal" | "booking";
+export type DealSubjectKind =
+  | "publication"
+  | "issue"
+  | "slot"
+  | "sponsor"
+  | "deal"
+  | "booking"
+  | "insertion_order"
+  | "delivery"
+  | "report_link";
 
 export interface AuditInput {
   type: string;

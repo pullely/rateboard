@@ -29,6 +29,11 @@ export const parseDealPublicId = (id: string): Uuid | null => uuidFromPublicId(i
 export const bookingPublicId = (uuid: string): string => `rbb_${uuidToHex(uuid)}`;
 export const parseBookingPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "rbb");
 
+export const insertionOrderPublicId = (uuid: string): string => `rbo_${uuidToHex(uuid)}`;
+export const deliveryPublicId = (uuid: string): string => `rbv_${uuidToHex(uuid)}`;
+export const reportLinkPublicId = (uuid: string): string => `rbr_${uuidToHex(uuid)}`;
+export const parseReportLinkPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "rbr");
+
 /**
  * The actor id in the shape a UUID column takes: pass a UUID through, decode a
  * `usr_<hex>` public id, and write null rather than garbage for anything else.

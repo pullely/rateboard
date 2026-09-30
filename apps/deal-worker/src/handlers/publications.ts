@@ -6,7 +6,7 @@ import { nowIso } from "../context.js";
 import { notFound, successResponse, validationError } from "../http.js";
 import { actorSubjectUuid, issuePublicId, publicationPublicId, slotPublicId } from "../ids.js";
 import { toPublicIssue, toPublicPublication, toPublicSlot } from "../present.js";
-import { validateIssueBody, validatePublicationBody, validateSlotBody, type SlotInput } from "../validate.js";
+import { validateIssueBody, validateIssuePatch, validatePublicationBody, validateSlotBody, type SlotInput } from "../validate.js";
 import { audit, conflict, invalidJson, readJson, withDb } from "./common.js";
 
 export async function handleListPublications(request: Request, env: Env, requestId: string, actor: ActorContext, orgId: string): Promise<Response> {
@@ -150,5 +150,46 @@ export async function handleCreateSlot(request: Request, env: Env, requestId: st
       payload: { slotId: slotPublicId(slot.id), issueId: issuePublicId(issue.id), format: slot.format, listPriceCents: slot.listPriceCents },
     });
     return successResponse({ slot: toPublicSlot(slot) }, requestId, 201);
+  });
+}
+
+/**
+ * PATCH issues/{rbi} (RB2; recorded as an RB1 departure) — retitle, reschedule
+ * or change the status of an issue. Cancelling is refused while any slot of
+ * the issue holds a live booking (409 issue_has_bookings), inside the same
+ * UPDATE; the booking claim already refuses a cancelled issue, so neither
+ * order of a racing cancel and claim can leave a booking in a cancelled issue.
+ */
+export async function handleUpdateIssue(request: Request, env: Env, requestId: string, actor: ActorContext, orgId: string, issueId: string): Promise<Response> {
+  const parsed = await readJson(request);
+  if (!parsed.ok) return invalidJson(requestId);
+  return withDb(env, requestId, actor, orgId, "deal.write", async (db) => {
+    const current = await db.deals.getIssue(orgId, issueId);
+    if (!current) return notFound(requestId);
+    const v = validateIssuePatch(parsed.body, current);
+    if (!v.valid) return validationError(requestId, v.fields);
+    const now = nowIso();
+    const issue = await db.deals.updateIssue(orgId, issueId, v.value, now);
+    if (!issue) {
+      if (!(await db.deals.getIssue(orgId, issueId))) return notFound(requestId);
+      if (v.value.status === "cancelled") {
+        const live = await db.deals.countLiveBookingsForIssue(orgId, issueId);
+        if (live > 0) {
+          return conflict(requestId, "issue_has_bookings", `"${current.title}" has ${live} booked slot(s); release them before cancelling`, { liveBookings: live });
+        }
+      }
+      return conflict(requestId, "duplicate_name", `"${current.publicationName}" already has an issue titled "${v.value.title}"`);
+    }
+    const changed = (["title", "publishOn", "status"] as const).filter((k) => v.value[k] !== current[k]);
+    await audit(db, actor, requestId, orgId, now, {
+      type: "deal.issue.updated",
+      kind: "issue",
+      subjectId: issue.id,
+      subjectName: `${issue.publicationName} — ${issue.title}`,
+      description: `Updated "${issue.title}" of ${issue.publicationName}${changed.length ? ` (${changed.join(", ")})` : ""}`,
+      payload: { issueId: issuePublicId(issue.id), changed, status: issue.status, publishOn: issue.publishOn },
+    });
+    const slots = await db.deals.listSlotsForIssue(orgId, issueId);
+    return successResponse({ issue: toPublicIssue(issue, slots) }, requestId);
   });
 }

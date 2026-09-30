@@ -60,6 +60,18 @@ export function dealBookingPublicId(uuid: string): string {
   return `rbb_${uuidToHex(uuid)}`;
 }
 
+export function dealInsertionOrderPublicId(uuid: string): string {
+  return `rbo_${uuidToHex(uuid)}`;
+}
+
+export function dealDeliveryPublicId(uuid: string): string {
+  return `rbv_${uuidToHex(uuid)}`;
+}
+
+export function dealReportLinkPublicId(uuid: string): string {
+  return `rbr_${uuidToHex(uuid)}`;
+}
+
 const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   organization: orgPublicId,
   project: projectPublicId,
@@ -72,6 +84,10 @@ const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   sponsor: dealSponsorPublicId,
   deal: dealDealPublicId,
   booking: dealBookingPublicId,
+  // RB2
+  insertion_order: dealInsertionOrderPublicId,
+  delivery: dealDeliveryPublicId,
+  report_link: dealReportLinkPublicId,
 };
 
 export function toPublicId(kind: string, rawId: string): string {

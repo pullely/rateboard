@@ -5,7 +5,14 @@ import type { ActorContext } from "../router.js";
 import { nowIso } from "../context.js";
 import { notFound, successResponse, validationError } from "../http.js";
 import { actorSubjectUuid, bookingPublicId, dealPublicId, parseSponsorPublicId, sponsorPublicId } from "../ids.js";
-import { toPipeline, toPublicBooking, toPublicDeal, toPublicStageChange } from "../present.js";
+import {
+  toPipeline,
+  toPublicBooking,
+  toPublicDeal,
+  toPublicInsertionOrder,
+  toPublicReportLink,
+  toPublicStageChange,
+} from "../present.js";
 import { validateDealCreate, validateDealPatch, validateStageMove } from "../validate.js";
 import { audit, conflict, formatMoney, invalidJson, readJson, withDb } from "./common.js";
 
@@ -87,9 +94,23 @@ export async function handleGetDeal(env: Env, requestId: string, actor: ActorCon
   return withDb(env, requestId, actor, orgId, "deal.read", async (db) => {
     const deal = await db.deals.getDeal(orgId, id);
     if (!deal) return notFound(requestId);
-    const [bookings, history] = await Promise.all([db.deals.listBookingsForDeal(orgId, id), db.deals.listStageHistory(orgId, id)]);
+    const [bookings, history, deliveries, io, links] = await Promise.all([
+      db.deals.listBookingsForDeal(orgId, id),
+      db.deals.listStageHistory(orgId, id),
+      db.paperwork.listDeliveriesForDeal(orgId, id),
+      db.paperwork.getInsertionOrder(orgId, id),
+      db.paperwork.listReportLinks(orgId, id),
+    ]);
+    const byBooking = new Map(deliveries.map((v) => [v.bookingId, v]));
+    const now = nowIso();
     return successResponse(
-      { deal: toPublicDeal(deal), bookings: bookings.map(toPublicBooking), history: history.map(toPublicStageChange) },
+      {
+        deal: toPublicDeal(deal),
+        bookings: bookings.map((b) => toPublicBooking(b, byBooking.get(b.id) ?? null)),
+        history: history.map(toPublicStageChange),
+        insertionOrder: io ? toPublicInsertionOrder(io) : null,
+        reportLinks: links.map((l) => toPublicReportLink(l, now)),
+      },
       requestId,
     );
   });
@@ -135,12 +156,30 @@ export async function handleMoveStage(request: Request, env: Env, requestId: str
     }
     const now = nowIso();
     const changedBy = actorSubjectUuid(actor.subjectId);
-    const moved = await db.deals.moveStage({ orgId, dealId: id, from, to, now, requireLiveBooking: to === "booked" });
+    const moved = await db.deals.moveStage({
+      orgId,
+      dealId: id,
+      from,
+      to,
+      now,
+      requireLiveBooking: to === "booked" || to === "delivered",
+      // RB2: a deal is delivered only when every live booking has a delivery.
+      requireAllDelivered: to === "delivered",
+    });
     if (!moved) {
       const latest = await db.deals.getDeal(orgId, id);
       if (!latest) return notFound(requestId);
       if (latest.stage !== from) {
         return conflict(requestId, "stage_conflict", `The deal is ${latest.stage}, not ${from}`, { currentStage: latest.stage });
+      }
+      if (to === "delivered") {
+        const undelivered = await db.paperwork.countUndeliveredBookings(orgId, id);
+        return conflict(
+          requestId,
+          "undelivered_bookings",
+          `Record a delivery for every booked slot first (${undelivered} still without one)`,
+          { undeliveredBookings: undelivered },
+        );
       }
       return conflict(requestId, "no_bookings", "Book at least one slot before marking the deal booked");
     }

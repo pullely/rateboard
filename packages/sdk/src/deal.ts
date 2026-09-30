@@ -1,6 +1,17 @@
 import type {
   BookingResponse,
   CreateBookingRequest,
+  CreateInsertionOrderRequest,
+  CreateReportLinkRequest,
+  CreateReportLinkResponse,
+  DeliveryResponse,
+  InsertionOrderResponse,
+  PutDeliveryRequest,
+  ReportLinkResponse,
+  SendInsertionOrderResponse,
+  SponsorReportResponse,
+  UpdateInsertionOrderRequest,
+  UpdateIssueRequest,
   CreateDealRequest,
   CreateIssueRequest,
   CreatePublicationRequest,
@@ -127,5 +138,67 @@ export class DealClient {
 
   pipeline(orgId: string, opts: RequestOptions = {}): Promise<PipelineResponse> {
     return this.transport.request<PipelineResponse>({ method: "GET", path: `${org(orgId)}/pipeline` }, opts);
+  }
+
+  // ── RB2 ──
+
+  /** PATCH …/issues/:id — 409 `issue_has_bookings` when cancelling an issue that still has booked slots. */
+  updateIssue(orgId: string, issueId: string, body: UpdateIssueRequest, opts: RequestOptions = {}): Promise<IssueResponse> {
+    return this.transport.request<IssueResponse>({ method: "PATCH", path: `${org(orgId)}/issues/${seg(issueId)}`, body }, opts);
+  }
+
+  /** POST …/deals/:id/insertion-order — numbered per org (IO-0001); 409 `deal_not_booked` / `insertion_order_exists`. */
+  createInsertionOrder(orgId: string, dealId: string, body: CreateInsertionOrderRequest = {}, opts: RequestOptions = {}): Promise<InsertionOrderResponse> {
+    return this.transport.request<InsertionOrderResponse>(
+      { method: "POST", path: `${org(orgId)}/deals/${seg(dealId)}/insertion-order`, body },
+      opts,
+    );
+  }
+
+  getInsertionOrder(orgId: string, dealId: string, opts: RequestOptions = {}): Promise<InsertionOrderResponse> {
+    return this.transport.request<InsertionOrderResponse>({ method: "GET", path: `${org(orgId)}/deals/${seg(dealId)}/insertion-order` }, opts);
+  }
+
+  updateInsertionOrder(orgId: string, dealId: string, body: UpdateInsertionOrderRequest, opts: RequestOptions = {}): Promise<InsertionOrderResponse> {
+    return this.transport.request<InsertionOrderResponse>(
+      { method: "PATCH", path: `${org(orgId)}/deals/${seg(dealId)}/insertion-order`, body },
+      opts,
+    );
+  }
+
+  /** POST …/insertion-order/send — 202 when notifications ACCEPTED the email (accepted, not delivered). */
+  sendInsertionOrder(orgId: string, dealId: string, opts: RequestOptions = {}): Promise<SendInsertionOrderResponse> {
+    return this.transport.request<SendInsertionOrderResponse>(
+      { method: "POST", path: `${org(orgId)}/deals/${seg(dealId)}/insertion-order/send`, body: {} },
+      opts,
+    );
+  }
+
+  /** PUT …/bookings/:id/delivery — create or replace the proof of delivery. */
+  putDelivery(orgId: string, dealId: string, bookingId: string, body: PutDeliveryRequest, opts: RequestOptions = {}): Promise<DeliveryResponse> {
+    return this.transport.request<DeliveryResponse>(
+      { method: "PUT", path: `${org(orgId)}/deals/${seg(dealId)}/bookings/${seg(bookingId)}/delivery`, body },
+      opts,
+    );
+  }
+
+  /** POST …/report-links — the token is in this response only; 409 `report_link_exists`. */
+  createReportLink(orgId: string, dealId: string, body: CreateReportLinkRequest = {}, opts: RequestOptions = {}): Promise<CreateReportLinkResponse> {
+    return this.transport.request<CreateReportLinkResponse>(
+      { method: "POST", path: `${org(orgId)}/deals/${seg(dealId)}/report-links`, body },
+      opts,
+    );
+  }
+
+  revokeReportLink(orgId: string, dealId: string, linkId: string, opts: RequestOptions = {}): Promise<ReportLinkResponse> {
+    return this.transport.request<ReportLinkResponse>(
+      { method: "DELETE", path: `${org(orgId)}/deals/${seg(dealId)}/report-links/${seg(linkId)}` },
+      opts,
+    );
+  }
+
+  /** GET /ingress/rateboard/r/:token — the sponsor's report; no session needed. 404 for unknown, revoked or expired. */
+  sponsorReport(token: string, opts: RequestOptions = {}): Promise<SponsorReportResponse> {
+    return this.transport.request<SponsorReportResponse>({ method: "GET", path: `/ingress/rateboard/r/${seg(token)}` }, opts);
   }
 }

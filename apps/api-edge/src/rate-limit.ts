@@ -58,7 +58,8 @@ export type RouteFamily =
   | "audit"
   | "notifications"
   | "integrations"
-  | "deal";
+  | "deal"
+  | "deal-public";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -95,6 +96,11 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   },
   // The pipeline, the calendar and bookings are ordinary org CRUD.
   deal: {
+    identity: { limit: 60, windowSec: 60 },
+    org: { limit: 300, windowSec: 60 },
+  },
+  // RB2: the sponsor report link, no session — keyed per IP (anon identity).
+  "deal-public": {
     identity: { limit: 60, windowSec: 60 },
     org: { limit: 300, windowSec: 60 },
   },

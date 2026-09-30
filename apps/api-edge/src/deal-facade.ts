@@ -3,6 +3,7 @@ import { errorResponse, withEdgeTimings } from "./http.js";
 import { replayOrExecute } from "./idempotency.js";
 import { resolveActor } from "./resolve-actor.js";
 import { createTimings } from "@saas/contracts/timing";
+import { enforceRateLimit, mergeRateLimitHeaders } from "./rate-limit.js";
 
 // Rateboard (deal-worker). One authenticated lane, /v1/organizations/{org}/…:
 // publications and their issues, ad slots, the inventory calendar, sponsors,
@@ -10,8 +11,13 @@ import { createTimings } from "@saas/contracts/timing";
 // resolveActor → actor headers over the DEAL_WORKER binding, like every other
 // org route; the worker runs membership + policy itself.
 
+// RB2 adds issues/{rbi} (PATCH), deals/{rbd}/insertion-order[/send],
+// deals/{rbd}/bookings/{rbb}/delivery and deals/{rbd}/report-links[/{rbr}].
 const DEAL_RE =
-  /^\/v1\/organizations\/[^/]+\/(?:publications(?:\/[^/]+(?:\/issues)?)?|issues\/[^/]+\/slots|inventory|sponsors(?:\/[^/]+)?|deals(?:\/[^/]+(?:\/(?:stage|bookings(?:\/[^/]+)?))?)?|pipeline)$/;
+  /^\/v1\/organizations\/[^/]+\/(?:publications(?:\/[^/]+(?:\/issues)?)?|issues\/[^/]+(?:\/slots)?|inventory|sponsors(?:\/[^/]+)?|deals(?:\/[^/]+(?:\/(?:stage|bookings(?:\/[^/]+(?:\/delivery)?)?|insertion-order(?:\/send)?|report-links(?:\/[^/]+)?))?)?|pipeline)$/;
+
+// RB2: the sponsor report link — public, no session. One exact shape.
+const PUBLIC_REPORT_RE = /^\/ingress\/rateboard\/r\/[^/]+$/;
 
 const FORWARDED_HEADERS = ["content-type", "content-length", "traceparent", "idempotency-key"];
 const BODY_METHODS = new Set(["POST", "PATCH", "PUT"]);
@@ -63,4 +69,39 @@ export async function handleDealRoute(
       return errorResponse("internal_error", "Deals service unavailable", 503, requestId);
     }
   });
+}
+
+export function isDealIngressRoute(pathname: string): boolean {
+  return PUBLIC_REPORT_RE.test(pathname);
+}
+
+/**
+ * GET /ingress/rateboard/r/{token} — the sponsor's no-login report (RB2).
+ * Dispatched in index.ts BEFORE the authenticated facades. No actor is
+ * resolved and no actor header is set (a caller's own x-actor-* headers are
+ * dropped), so deal-worker can only treat the call as a bearer-token lookup.
+ * Rate-limited per IP under the `deal-public` family.
+ */
+export async function handleDealIngressRoute(
+  request: Request,
+  env: Env,
+  requestId: string,
+  pathname: string,
+): Promise<Response> {
+  if (request.method !== "GET") return errorResponse("unsupported", "Method not allowed", 405, requestId);
+  if (!env.DEAL_WORKER) return errorResponse("internal_error", "Deals service unavailable", 503, requestId);
+  const rateDecision = await enforceRateLimit(request, requestId, env, "deal-public");
+  if (rateDecision.kind === "denied") return rateDecision.response;
+  const headers = new Headers();
+  headers.set("x-request-id", requestId);
+  headers.set("x-internal-caller", "api-edge");
+  try {
+    const downstream = await env.DEAL_WORKER.fetch(new URL(pathname, "https://deal.internal").toString(), { method: "GET", headers });
+    return mergeRateLimitHeaders(
+      new Response(downstream.body, { status: downstream.status, headers: downstream.headers }),
+      rateDecision.headers,
+    );
+  } catch {
+    return errorResponse("internal_error", "Deals service unavailable", 503, requestId);
+  }
 }

@@ -137,6 +137,15 @@ export const DEAL_CONFLICT_REASONS = [
   "last_booking",
   "already_released",
   "duplicate_name",
+  // RB2
+  "undelivered_bookings",
+  "deal_not_booked",
+  "insertion_order_exists",
+  "insertion_order_signed",
+  "report_link_exists",
+  "already_revoked",
+  "issue_has_bookings",
+  "no_contact_email",
 ] as const;
 export type DealConflictReason = (typeof DEAL_CONFLICT_REASONS)[number];
 
@@ -153,6 +162,15 @@ export const DEAL_EVENT_TYPES = [
   "deal.booking.created",
   "deal.booking.refused",
   "deal.booking.released",
+  // RB2
+  "deal.issue.updated",
+  "deal.io.created",
+  "deal.io.updated",
+  "deal.io.sent",
+  "deal.io.signed",
+  "deal.delivery.recorded",
+  "deal.report_link.created",
+  "deal.report_link.revoked",
 ] as const;
 export type DealEventType = (typeof DEAL_EVENT_TYPES)[number];
 
@@ -246,6 +264,143 @@ export interface PublicDeal {
   updatedAt: string;
 }
 
+// ── RB2: insertion orders, deliveries, sponsor report links ─────────
+
+export const IO_STATUSES = ["draft", "sent", "signed"] as const;
+export type InsertionOrderStatus = (typeof IO_STATUSES)[number];
+
+/** `IO-0001`: the per-org sequence, zero-padded to four digits (wider past 9999). */
+export function formatIoNumber(seq: number): string {
+  return `IO-${String(seq).padStart(4, "0")}`;
+}
+
+/** The notifications template the IO email renders with. */
+export const DEAL_IO_TEMPLATE_KEY = "deal.io.sent";
+
+/** A report link may live at most this many days. */
+export const REPORT_LINK_MAX_DAYS = 365;
+
+export interface PublicInsertionOrder {
+  id: string;
+  dealId: string;
+  number: string;
+  terms: string;
+  totalCents: number;
+  currency: string;
+  paymentDueOn: string | null;
+  status: InsertionOrderStatus;
+  sendCount: number;
+  sentAt: string | null;
+  sentTo: string | null;
+  signedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicDelivery {
+  id: string;
+  bookingId: string;
+  deliveredOn: string;
+  proofUrl: string | null;
+  opens: number | null;
+  clicks: number | null;
+  impressions: number | null;
+  downloads: number | null;
+  notes: string;
+  updatedAt: string;
+}
+
+export interface PublicReportLink {
+  id: string;
+  dealId: string;
+  expiresAt: string | null;
+  lastViewedAt: string | null;
+  viewCount: number;
+  createdAt: string;
+  revokedAt: string | null;
+  /** live = not revoked and not expired. */
+  live: boolean;
+}
+
+/** One delivered slot on the sponsor's report. Never a price, a note or an internal id. */
+export interface SponsorReportLine {
+  publicationName: string;
+  publicationKind: PublicationKind;
+  issueTitle: string;
+  publishOn: string;
+  slotLabel: string;
+  format: SlotFormat;
+  deliveredOn: string;
+  proofUrl: string | null;
+  opens: number | null;
+  clicks: number | null;
+  impressions: number | null;
+  downloads: number | null;
+}
+
+export interface SponsorReport {
+  sponsorName: string;
+  dealTitle: string;
+  lines: SponsorReportLine[];
+}
+
+export interface CreateInsertionOrderRequest {
+  terms?: string;
+  /** Defaults to the sum of the deal's live bookings. */
+  totalCents?: number;
+  paymentDueOn?: string | null;
+}
+export interface UpdateInsertionOrderRequest {
+  terms?: string;
+  totalCents?: number;
+  paymentDueOn?: string | null;
+  /** Recorded by hand; there is no e-signature provider. */
+  status?: "signed";
+}
+export interface PutDeliveryRequest {
+  deliveredOn: string;
+  proofUrl?: string | null;
+  opens?: number | null;
+  clicks?: number | null;
+  impressions?: number | null;
+  downloads?: number | null;
+  notes?: string;
+}
+export interface CreateReportLinkRequest {
+  /** 1–365; omitted = the link does not expire (revoke it instead). */
+  expiresInDays?: number;
+}
+export interface UpdateIssueRequest {
+  title?: string;
+  publishOn?: string;
+  status?: IssueStatus;
+}
+
+export interface InsertionOrderResponse {
+  insertionOrder: PublicInsertionOrder;
+}
+export interface SendInsertionOrderResponse {
+  insertionOrder: PublicInsertionOrder;
+  /** Accepted by notifications-worker — accepted, not delivered (runbook trap 27). */
+  notification: { id: string; status: "accepted" };
+}
+export interface DeliveryResponse {
+  delivery: PublicDelivery;
+}
+export interface CreateReportLinkResponse {
+  reportLink: PublicReportLink;
+  /** Shown once. Only its SHA-256 is stored. */
+  token: string;
+  /** The public path, relative to the API: /ingress/rateboard/r/{token}. */
+  path: string;
+}
+export interface ReportLinkResponse {
+  reportLink: PublicReportLink;
+}
+export interface SponsorReportResponse {
+  report: SponsorReport;
+}
+
 export interface PublicBooking {
   id: string;
   dealId: string;
@@ -264,6 +419,8 @@ export interface PublicBooking {
   bookedAt: string;
   releasedAt: string | null;
   releaseReason: ReleaseReason | null;
+  /** RB2: the proof of delivery, once recorded. */
+  delivery: PublicDelivery | null;
 }
 
 export interface PublicStageChange {
@@ -373,6 +530,9 @@ export interface GetDealResponse {
   deal: PublicDeal;
   bookings: PublicBooking[];
   history: PublicStageChange[];
+  /** RB2 */
+  insertionOrder: PublicInsertionOrder | null;
+  reportLinks: PublicReportLink[];
 }
 export interface ListDealsResponse {
   deals: PublicDeal[];

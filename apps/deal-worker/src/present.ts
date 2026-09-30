@@ -7,7 +7,13 @@ import {
   type Niche,
   type PipelineStageSummary,
   type Platform,
+  type InsertionOrderStatus,
   type PublicBooking,
+  type PublicDelivery,
+  type PublicInsertionOrder,
+  type PublicReportLink,
+  type SponsorReport,
+  formatIoNumber,
   type PublicDeal,
   type PublicIssue,
   type PublicPublication,
@@ -19,10 +25,26 @@ import {
   type ReleaseReason,
   type SlotFormat,
 } from "@saas/contracts/deal";
-import type { Booking, Deal, Issue, Publication, Slot, Sponsor, StageChange, StageSummaryRow } from "@saas/db/deal";
+import type {
+  Booking,
+  Deal,
+  Delivery,
+  InsertionOrder,
+  Issue,
+  PublicReport,
+  Publication,
+  ReportLink,
+  Slot,
+  Sponsor,
+  StageChange,
+  StageSummaryRow,
+} from "@saas/db/deal";
 import {
   bookingPublicId,
   dealPublicId,
+  deliveryPublicId,
+  insertionOrderPublicId,
+  reportLinkPublicId,
   issuePublicId,
   orgPublicId,
   publicationPublicId,
@@ -121,7 +143,7 @@ export function toPublicDeal(d: Deal): PublicDeal {
   };
 }
 
-export function toPublicBooking(b: Booking): PublicBooking {
+export function toPublicBooking(b: Booking, delivery: Delivery | null = null): PublicBooking {
   return {
     id: bookingPublicId(b.id),
     dealId: dealPublicId(b.dealId),
@@ -140,6 +162,76 @@ export function toPublicBooking(b: Booking): PublicBooking {
     bookedAt: b.bookedAt,
     releasedAt: b.releasedAt,
     releaseReason: b.releaseReason as ReleaseReason | null,
+    delivery: delivery ? toPublicDelivery(delivery) : null,
+  };
+}
+
+export function toPublicDelivery(v: Delivery): PublicDelivery {
+  return {
+    id: deliveryPublicId(v.id),
+    bookingId: bookingPublicId(v.bookingId),
+    deliveredOn: v.deliveredOn,
+    proofUrl: v.proofUrl,
+    opens: v.opens,
+    clicks: v.clicks,
+    impressions: v.impressions,
+    downloads: v.downloads,
+    notes: v.notes,
+    updatedAt: v.updatedAt,
+  };
+}
+
+export function toPublicInsertionOrder(o: InsertionOrder): PublicInsertionOrder {
+  return {
+    id: insertionOrderPublicId(o.id),
+    dealId: dealPublicId(o.dealId),
+    number: formatIoNumber(o.seq),
+    terms: o.terms,
+    totalCents: o.totalCents,
+    currency: o.currency,
+    paymentDueOn: o.paymentDueOn,
+    status: o.status as InsertionOrderStatus,
+    sendCount: o.sendCount,
+    sentAt: o.sentAt,
+    sentTo: o.sentTo,
+    signedAt: o.signedAt,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  };
+}
+
+export function toPublicReportLink(l: ReportLink, now: string): PublicReportLink {
+  return {
+    id: reportLinkPublicId(l.id),
+    dealId: dealPublicId(l.dealId),
+    expiresAt: l.expiresAt,
+    lastViewedAt: l.lastViewedAt,
+    viewCount: l.viewCount,
+    createdAt: l.createdAt,
+    revokedAt: l.revokedAt,
+    live: l.revokedAt === null && (l.expiresAt === null || l.expiresAt > now),
+  };
+}
+
+/** The sponsor's view: exactly the §1.8 fields, built field by field so nothing else can leak in. */
+export function toSponsorReport(r: PublicReport): SponsorReport {
+  return {
+    sponsorName: r.sponsorName,
+    dealTitle: r.dealTitle,
+    lines: r.lines.map((l) => ({
+      publicationName: l.publicationName,
+      publicationKind: l.publicationKind as PublicationKind,
+      issueTitle: l.issueTitle,
+      publishOn: l.publishOn,
+      slotLabel: l.slotLabel,
+      format: l.format as SlotFormat,
+      deliveredOn: l.deliveredOn,
+      proofUrl: l.proofUrl,
+      opens: l.opens,
+      clicks: l.clicks,
+      impressions: l.impressions,
+      downloads: l.downloads,
+    })),
   };
 }
 

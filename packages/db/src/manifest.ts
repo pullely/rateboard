@@ -192,5 +192,14 @@ export const manifest: MigrationManifest = {
       description:
         "Sponsor pipeline foundation (RB1) — publications with niche and audience size, their issues or episodes and ad slots, sponsors, deals through lead → pitched → booked → delivered → paid (or lost) with their stage history, and bookings of deals into slots, at most one live booking per slot (partial unique index)",
     },
+    {
+      id: "210_deal_paperwork",
+      context: "deal",
+      path: "210_deal_paperwork/up.sql",
+      checksum:
+        "cf15eb2784dc3e3aa6f0dea0d396add3469ffbb466f2d5bc217d25c437f97c02",
+      description:
+        "Deal paperwork (RB2) — one insertion order per deal numbered per org under UNIQUE (org_id, seq), one delivery per booking with hand-entered stats, and no-login sponsor report links stored only as SHA-256 hashes, at most one live link per deal",
+    },
   ],
 };
