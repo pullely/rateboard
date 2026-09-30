@@ -59,6 +59,8 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "project.repo_link.write",
     "deal.read",
     "deal.write",
+    "bench.contribute",
+    "bench.read",
   ],
   admin: [
     "organization.read",
@@ -102,6 +104,8 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "project.repo_link.write",
     "deal.read",
     "deal.write",
+    "bench.contribute",
+    "bench.read",
   ],
   builder: [
     "organization.read",
@@ -120,6 +124,7 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "organization.integration.read",
     "deal.read",
     "deal.write",
+    "bench.read",
   ],
   viewer: [
     "organization.read",
@@ -133,6 +138,7 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "organization.metering.read",
     "organization.integration.read",
     "deal.read",
+    "bench.read",
   ],
   billing_admin: [
     "organization.read",
@@ -256,6 +262,10 @@ const ALL_KNOWN_ACTIONS: ReadonlySet<string> = new Set([
   "project.repo_link.write",
   "deal.read",
   "deal.write",
+  // RB3: the opt-in benchmarks. contribute = owner/admin; read = every org role
+  // (bench-worker also requires the org to be contributing).
+  "bench.contribute",
+  "bench.read",
 ]);
 
 function isOrgRole(role: string): role is OrganizationRole {

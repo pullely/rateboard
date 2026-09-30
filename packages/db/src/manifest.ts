@@ -201,5 +201,14 @@ export const manifest: MigrationManifest = {
       description:
         "Deal paperwork (RB2) — one insertion order per deal numbered per org under UNIQUE (org_id, seq), one delivery per booking with hand-entered stats, and no-login sponsor report links stored only as SHA-256 hashes, at most one live link per deal",
     },
+    {
+      id: "220_bench_core",
+      context: "bench",
+      path: "220_bench_core/up.sql",
+      checksum:
+        "f750b85be76977f50eb889fa8347439769219f19cd33020f818de3f3e6f63074",
+      description:
+        "Opt-in rate benchmarks (RB3) — per-org consent (revocable), the weekly aggregate runs, the published cells (exactly the design §6.5 fields) and the private pseudonymous membership of each published cell version",
+    },
   ],
 };

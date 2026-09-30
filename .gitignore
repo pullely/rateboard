@@ -39,3 +39,4 @@ apps/admin-worker/wrangler.jsonc
 apps/integrations-worker/wrangler.jsonc
 apps/webhooks-worker/wrangler.jsonc
 apps/deal-worker/wrangler.jsonc
+apps/bench-worker/wrangler.jsonc

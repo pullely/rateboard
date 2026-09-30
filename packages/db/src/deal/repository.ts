@@ -301,7 +301,7 @@ export function createDealRepository(executor: SqlExecutor): DealRepository {
     },
 
     async listSlotsForIssue(orgId, issueId) {
-      const rows = await many(`${SLOT_SELECT} WHERE s.org_id = $1 AND s.issue_id = $2 ORDER BY s.created_at ASC, s.id ASC`, [orgId, issueId]);
+      const rows = await many(`${SLOT_SELECT} WHERE s.org_id = $1 AND s.issue_id = $2 ORDER BY s.created_at ASC, s.rowid ASC`, [orgId, issueId]);
       return rows.map(mapSlot);
     },
 
@@ -325,7 +325,7 @@ export function createDealRepository(executor: SqlExecutor): DealRepository {
       }
       const rows = await many(
         `${SLOT_SELECT.replace("FROM deal_slots s", "FROM deal_slots s\n    JOIN deal_issues i ON i.id = s.issue_id AND i.org_id = s.org_id")}
-          WHERE ${where} ORDER BY s.created_at ASC, s.id ASC LIMIT 5000`,
+          WHERE ${where} ORDER BY s.created_at ASC, s.rowid ASC LIMIT 5000`,
         params,
       );
       return rows.map(mapSlot);

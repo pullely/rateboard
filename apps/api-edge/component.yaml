@@ -14,6 +14,7 @@ spec:
     - component: cloudflare-kv
     - component: projects-worker
     - component: deal-worker
+    - component: bench-worker
     - component: events-worker
     - component: config-worker
     - component: webhooks-worker
@@ -87,4 +88,4 @@ spec:
     runtime: cloudflare
 # ci: re-trigger deploy (batch C — integrations + api-edge gateway, 20260622T141448Z)
 # ci: re-trigger deploy (batch C — integrations + api-edge gateway, 20260622T141448Z)
-# orun: redeploy RB2 — packages/db (deal paperwork: insertion orders, deliveries, report links), packages/contracts (deal RB2 wire types)
+# orun: redeploy RB3 — packages/policy-engine (bench.contribute, bench.read), packages/db (bench context, 220_bench_core), packages/contracts (bench wire types)

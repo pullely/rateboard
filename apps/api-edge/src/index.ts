@@ -7,6 +7,7 @@ import { isAuthRoute, handleAuthRoute } from "./auth-facade";
 import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
 import { isDealRoute, handleDealRoute, isDealIngressRoute, handleDealIngressRoute } from "./deal-facade";
+import { isBenchRoute, handleBenchRoute } from "./bench-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -73,6 +74,8 @@ export default {
       response = await handleMeteringRoute(request, env, requestId, url.pathname);
     } else if (isBillingRoute(url.pathname)) {
       response = await handleBillingRoute(request, env, requestId, url.pathname);
+    } else if (isBenchRoute(url.pathname)) {
+      response = await handleBenchRoute(request, env, requestId, url.pathname);
     } else if (isDealRoute(url.pathname)) {
       response = await handleDealRoute(request, env, requestId, url.pathname);
     } else if (isProjectRoute(url.pathname)) {

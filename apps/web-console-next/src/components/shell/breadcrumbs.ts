@@ -19,6 +19,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   pipeline: "Pipeline",
   inventory: "Inventory",
   sponsors: "Sponsors",
+  benchmarks: "Benchmarks",
   deals: "Deals",
   projects: "Projects",
   environments: "Environments",

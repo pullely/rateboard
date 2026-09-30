@@ -14,6 +14,7 @@
     "./policy": "./src/policy.ts",
     "./projects": "./src/projects.ts",
     "./deal": "./src/deal.ts",
+    "./bench": "./src/bench.ts",
     "./events": "./src/events.ts",
     "./security-events": "./src/security-events.ts",
     "./api-keys": "./src/api-keys.ts",

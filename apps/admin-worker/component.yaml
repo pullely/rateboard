@@ -66,4 +66,4 @@ spec:
     surface: admin-support
     runtime: cloudflare
 # ci: re-trigger deploy (batch A — runner-starvation recovery 20260622T115650Z)
-# orun: redeploy RB2 — packages/db (deal paperwork: insertion orders, deliveries, report links), packages/contracts (deal RB2 wire types)
+# orun: redeploy RB3 — packages/policy-engine (bench.contribute, bench.read), packages/db (bench context, 220_bench_core), packages/contracts (bench wire types)

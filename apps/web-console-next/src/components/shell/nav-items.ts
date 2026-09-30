@@ -68,6 +68,7 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
             { href: `${orgBase}/pipeline`, label: "Pipeline", icon: "SquareKanban" },
             { href: `${orgBase}/inventory`, label: "Inventory", icon: "CalendarDays" },
             { href: `${orgBase}/sponsors`, label: "Sponsors", icon: "Handshake" },
+            { href: `${orgBase}/benchmarks`, label: "Benchmarks", icon: "TrendingUp" },
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ]
         : [
@@ -75,6 +76,7 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
             { href: `${orgBase}/pipeline`, label: "Pipeline", icon: "SquareKanban" },
             { href: `${orgBase}/inventory`, label: "Inventory", icon: "CalendarDays" },
             { href: `${orgBase}/sponsors`, label: "Sponsors", icon: "Handshake" },
+            { href: `${orgBase}/benchmarks`, label: "Benchmarks", icon: "TrendingUp" },
             { href: `${orgBase}/projects`, label: "Projects", icon: "FolderKanban" },
             { href: `${orgBase}/usage`, label: "Usage & quota", icon: "Gauge" },
             // Opens the dedicated settings panel — flagged so the renderer shows a ›.

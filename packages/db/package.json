@@ -13,6 +13,7 @@
     "./events": "./src/events/index.ts",
     "./projects": "./src/projects/index.ts",
     "./deal": "./src/deal/index.ts",
+    "./bench": "./src/bench/index.ts",
     "./config": "./src/config/index.ts",
     "./webhooks": "./src/webhooks/index.ts",
     "./metering": "./src/metering/index.ts",
