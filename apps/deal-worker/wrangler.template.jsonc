@@ -37,6 +37,10 @@
         {
           "binding": "POLICY_WORKER",
           "service": "rateboard-policy-worker-stage"
+        },
+        {
+          "binding": "NOTIFICATIONS_WORKER",
+          "service": "rateboard-notifications-worker-stage"
         }
       ]
     },
@@ -60,6 +64,10 @@
         {
           "binding": "POLICY_WORKER",
           "service": "rateboard-policy-worker-prod"
+        },
+        {
+          "binding": "NOTIFICATIONS_WORKER",
+          "service": "rateboard-notifications-worker-prod"
         }
       ]
     }

@@ -6,7 +6,7 @@ import { handlePreflight, applyCorsHeaders } from "./cors";
 import { isAuthRoute, handleAuthRoute } from "./auth-facade";
 import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
-import { isDealRoute, handleDealRoute } from "./deal-facade";
+import { isDealRoute, handleDealRoute, isDealIngressRoute, handleDealIngressRoute } from "./deal-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -51,6 +51,10 @@ export default {
       response = await handleAuditRoute(request, env, requestId, url.pathname);
     } else if (isConfigRoute(url.pathname)) {
       response = await handleConfigRoute(request, env, requestId, url.pathname);
+    } else if (isDealIngressRoute(url.pathname)) {
+      // RB2: the sponsor report link (no session) — the token is verified by
+      // hash lookup inside deal-worker; the edge rate-limits and forwards.
+      response = await handleDealIngressRoute(request, env, requestId, url.pathname);
     } else if (isIntegrationsIngressRoute(url.pathname)) {
       // Public install-callback ingress (no session) — authenticated by the
       // signed single-use state verified in integrations-worker.

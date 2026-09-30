@@ -114,7 +114,10 @@ describe("the double-booking guarantee", () => {
     const again = await send(w, `/v1/organizations/${ORG}/deals/${deal.id}/bookings/${releasedId}`, OWNER, {}, "DELETE");
     expect((await json(again)).error.details.reason).toBe("already_released");
 
-    // A delivered deal takes no new bookings.
+    // A delivered deal takes no new bookings. (From RB2 the remaining live
+    // booking needs its delivery recorded before the deal can be delivered.)
+    const remaining = releasedId === a.booking.id ? b.booking.id : a.booking.id;
+    await ok(await send(w, `/v1/organizations/${ORG}/deals/${deal.id}/bookings/${remaining}/delivery`, OWNER, { deliveredOn: "2026-10-06" }, "PUT"));
     await ok(await move(w, deal.id, "delivered"));
     const late = await book(w, deal.id, releasedId === a.booking.id ? primary.id : secondary.id);
     expect(late.status).toBe(409);

@@ -83,4 +83,4 @@ spec:
     runtime: cloudflare
 
 # ci: re-trigger deploy (batch C — integrations + api-edge gateway, 20260622T141448Z)
-# orun: redeploy RB1 — packages/db (trap-16 D1 fix, deal context), packages/policy-engine (deal.* actions), packages/contracts (deal-worker notifications caller)
+# orun: redeploy RB2 — packages/db (deal paperwork: insertion orders, deliveries, report links), packages/contracts (deal RB2 wire types)

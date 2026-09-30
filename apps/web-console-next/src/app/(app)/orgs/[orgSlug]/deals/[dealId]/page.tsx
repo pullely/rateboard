@@ -15,6 +15,7 @@ import { useApiQuery, qk } from "@/lib/query";
 import { useToast } from "@/components/ui/toast";
 import { wrap } from "@/lib/api";
 import { StageBadge, labelClass, money, selectClass, toCents } from "@/components/deals/format";
+import { DeliveryForm, InsertionOrderPanel, ReportLinksPanel } from "@/components/deals/paperwork";
 import {
   DEAL_STAGE_LABELS,
   SLOT_FORMAT_LABELS,
@@ -142,9 +143,16 @@ function Detail({
                     <TD className="text-right">
                       {b.releasedAt ? (
                         <Badge variant="secondary">{b.releaseReason === "deal_lost" ? "Released (lost)" : "Released"}</Badge>
-                      ) : ["lead", "pitched", "booked"].includes(deal.stage) ? (
-                        <Button size="sm" variant="ghost" onClick={() => void release(b)}>Release</Button>
-                      ) : null}
+                      ) : (
+                        <div className="flex flex-wrap justify-end gap-1">
+                          {["booked", "delivered", "paid"].includes(deal.stage) ? (
+                            <DeliveryForm orgId={orgId} dealId={dealId} booking={b} onSaved={reload} />
+                          ) : null}
+                          {["lead", "pitched", "booked"].includes(deal.stage) ? (
+                            <Button size="sm" variant="ghost" onClick={() => void release(b)}>Release</Button>
+                          ) : null}
+                        </div>
+                      )}
                     </TD>
                   </TR>
                 ))}
@@ -156,6 +164,9 @@ function Detail({
           )}
         </CardContent>
       </Card>
+
+      <InsertionOrderPanel orgId={orgId} dealId={dealId} data={data} reload={reload} />
+      <ReportLinksPanel orgId={orgId} dealId={dealId} data={data} reload={reload} />
 
       <Card>
         <CardHeader>

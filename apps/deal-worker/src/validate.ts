@@ -2,6 +2,8 @@ import {
   DEAL_PRICING,
   DEAL_STAGES,
   ISSUE_MAX_INLINE_SLOTS,
+  ISSUE_STATUSES,
+  REPORT_LINK_MAX_DAYS,
   NICHES,
   PLATFORMS,
   PUBLICATION_KINDS,
@@ -9,13 +11,24 @@ import {
   SLOT_FORMATS,
   type DealPricing,
   type DealStage,
+  type IssueStatus,
   type Niche,
   type Platform,
   type PublicationKind,
   type PublicationStatus,
   type SlotFormat,
 } from "@saas/contracts/deal";
-import type { DealFields, Publication, PublicationFields, Sponsor, SponsorFields, Deal } from "@saas/db/deal";
+import type {
+  Deal,
+  DealFields,
+  DeliveryFields,
+  InsertionOrderFields,
+  IssueFields,
+  Publication,
+  PublicationFields,
+  Sponsor,
+  SponsorFields,
+} from "@saas/db/deal";
 
 export type Validation<T> = { valid: true; value: T } | { valid: false; fields: Record<string, string[]> };
 
@@ -343,4 +356,112 @@ export function validateRange(from: string | null, to: string | null): Validatio
   if (to !== null && !isCalendarDate(to)) c.add("to", "A date as YYYY-MM-DD");
   if (!c.ok) return { valid: false, fields: c.fields };
   return { valid: true, value: { from, to } };
+}
+
+// ── RB2: issues, insertion orders, deliveries, report links ─
+
+const TERMS_MAX = 20_000;
+const STAT_MAX = 1_000_000_000;
+const STAT = { max: STAT_MAX, message: `A whole number from 0 to ${STAT_MAX}` };
+
+export function validateIssuePatch(body: unknown, current: IssueFields): Validation<IssueFields> {
+  if (!isObject(body)) return { valid: false, fields: { body: ["Must be a JSON object"] } };
+  const c = new Collector();
+  const title = text(c, body, "title", { required: false, max: 120 });
+  if (title === null) c.add("title", "Required");
+  const publishOn = date(c, body, "publishOn", false);
+  if (publishOn === null) c.add("publishOn", "Required");
+  const status = oneOf<IssueStatus>(c, body, "status", ISSUE_STATUSES, { required: false });
+  if (!c.ok) return { valid: false, fields: c.fields };
+  return {
+    valid: true,
+    value: { title: title ?? current.title, publishOn: publishOn ?? current.publishOn, status: status ?? current.status },
+  };
+}
+
+export interface IoCreateInput {
+  terms: string;
+  totalCents: number | null;
+  paymentDueOn: string | null;
+}
+
+export function validateIoCreate(body: unknown): Validation<IoCreateInput> {
+  if (!isObject(body)) return { valid: false, fields: { body: ["Must be a JSON object"] } };
+  const c = new Collector();
+  const terms = text(c, body, "terms", { required: false, max: TERMS_MAX });
+  const totalCents = int(c, body, "totalCents", { required: false, nullable: true, ...CENTS });
+  const paymentDueOn = date(c, body, "paymentDueOn", false);
+  if (!c.ok) return { valid: false, fields: c.fields };
+  return { valid: true, value: { terms: terms ?? "", totalCents: totalCents ?? null, paymentDueOn: paymentDueOn ?? null } };
+}
+
+export interface IoPatchInput extends InsertionOrderFields {
+  sign: boolean;
+  /** true when the body carried any field besides `status`. */
+  editsFields: boolean;
+}
+
+export function validateIoPatch(body: unknown, current: InsertionOrderFields): Validation<IoPatchInput> {
+  if (!isObject(body)) return { valid: false, fields: { body: ["Must be a JSON object"] } };
+  const c = new Collector();
+  const terms = text(c, body, "terms", { required: false, max: TERMS_MAX });
+  const totalCents = int(c, body, "totalCents", { required: false, nullable: false, ...CENTS });
+  const paymentDueOn = date(c, body, "paymentDueOn", false);
+  let sign = false;
+  if ("status" in body && body.status !== undefined) {
+    if (body.status !== "signed") c.add("status", 'Only "signed" can be set by hand; "sent" is set by sending');
+    else sign = true;
+  }
+  if (!c.ok) return { valid: false, fields: c.fields };
+  const editsFields = ["terms", "totalCents", "paymentDueOn"].some((f) => f in body && body[f] !== undefined);
+  return {
+    valid: true,
+    value: {
+      terms: terms === undefined ? current.terms : (terms ?? ""),
+      totalCents: totalCents ?? current.totalCents,
+      paymentDueOn: paymentDueOn === undefined ? current.paymentDueOn : paymentDueOn,
+      sign,
+      editsFields,
+    },
+  };
+}
+
+export function validateDeliveryBody(body: unknown): Validation<DeliveryFields> {
+  if (!isObject(body)) return { valid: false, fields: { body: ["Must be a JSON object"] } };
+  const c = new Collector();
+  const deliveredOn = date(c, body, "deliveredOn", true);
+  const proofUrl = url(c, body, "proofUrl");
+  const opens = int(c, body, "opens", { required: false, nullable: true, ...STAT });
+  const clicks = int(c, body, "clicks", { required: false, nullable: true, ...STAT });
+  const impressions = int(c, body, "impressions", { required: false, nullable: true, ...STAT });
+  const downloads = int(c, body, "downloads", { required: false, nullable: true, ...STAT });
+  const notes = text(c, body, "notes", { required: false, max: 5000 });
+  if (!c.ok) return { valid: false, fields: c.fields };
+  return {
+    valid: true,
+    value: {
+      deliveredOn: deliveredOn!,
+      proofUrl: proofUrl ?? null,
+      opens: opens ?? null,
+      clicks: clicks ?? null,
+      impressions: impressions ?? null,
+      downloads: downloads ?? null,
+      notes: notes ?? "",
+    },
+  };
+}
+
+export function validateReportLinkBody(body: unknown): Validation<{ expiresInDays: number | null }> {
+  if (body === null || body === undefined) return { valid: true, value: { expiresInDays: null } };
+  if (!isObject(body)) return { valid: false, fields: { body: ["Must be a JSON object"] } };
+  const c = new Collector();
+  const days = int(c, body, "expiresInDays", {
+    required: false,
+    nullable: true,
+    max: REPORT_LINK_MAX_DAYS,
+    message: `A whole number of days from 1 to ${REPORT_LINK_MAX_DAYS}`,
+  });
+  if (days === 0) c.add("expiresInDays", `A whole number of days from 1 to ${REPORT_LINK_MAX_DAYS}`);
+  if (!c.ok) return { valid: false, fields: c.fields };
+  return { valid: true, value: { expiresInDays: days ?? null } };
 }

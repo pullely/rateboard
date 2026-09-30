@@ -1,11 +1,22 @@
 import type { Env } from "./env.js";
 import { handleHealth } from "./handlers/health.js";
 import {
+  handleCreateInsertionOrder,
+  handleCreateReportLink,
+  handleGetInsertionOrder,
+  handlePutDelivery,
+  handleRevokeReportLink,
+  handleSendInsertionOrder,
+  handleUpdateInsertionOrder,
+} from "./handlers/paperwork.js";
+import { handlePublicReport } from "./handlers/report.js";
+import {
   handleCreateIssue,
   handleCreatePublication,
   handleCreateSlot,
   handleGetPublication,
   handleListPublications,
+  handleUpdateIssue,
   handleUpdatePublication,
 } from "./handlers/publications.js";
 import { handleInventory } from "./handlers/inventory.js";
@@ -27,6 +38,7 @@ import {
   parseIssuePublicId,
   parseOrgPublicId,
   parsePublicationPublicId,
+  parseReportLinkPublicId,
   parseSponsorPublicId,
 } from "./ids.js";
 
@@ -87,6 +99,11 @@ const ROUTES: RouteDef[] = [
     methods: { POST: (req, env, rid, actor, org, [id]) => handleCreateIssue(req, env, rid, actor, org, id!) },
   },
   {
+    re: /^issues\/([^/]+)$/,
+    parsers: [parseIssuePublicId],
+    methods: { PATCH: (req, env, rid, actor, org, [id]) => handleUpdateIssue(req, env, rid, actor, org, id!) },
+  },
+  {
     re: /^issues\/([^/]+)\/slots$/,
     parsers: [parseIssuePublicId],
     methods: { POST: (req, env, rid, actor, org, [id]) => handleCreateSlot(req, env, rid, actor, org, id!) },
@@ -145,6 +162,40 @@ const ROUTES: RouteDef[] = [
       DELETE: (_req, env, rid, actor, org, [deal, booking]) => handleReleaseBooking(env, rid, actor, org, deal!, booking!),
     },
   },
+  // ── RB2 ──
+  {
+    re: /^deals\/([^/]+)\/insertion-order$/,
+    parsers: [parseDealPublicId],
+    methods: {
+      GET: (_req, env, rid, actor, org, [id]) => handleGetInsertionOrder(env, rid, actor, org, id!),
+      POST: (req, env, rid, actor, org, [id]) => handleCreateInsertionOrder(req, env, rid, actor, org, id!),
+      PATCH: (req, env, rid, actor, org, [id]) => handleUpdateInsertionOrder(req, env, rid, actor, org, id!),
+    },
+  },
+  {
+    re: /^deals\/([^/]+)\/insertion-order\/send$/,
+    parsers: [parseDealPublicId],
+    methods: { POST: (_req, env, rid, actor, org, [id]) => handleSendInsertionOrder(env, rid, actor, org, id!) },
+  },
+  {
+    re: /^deals\/([^/]+)\/bookings\/([^/]+)\/delivery$/,
+    parsers: [parseDealPublicId, parseBookingPublicId],
+    methods: {
+      PUT: (req, env, rid, actor, org, [deal, booking]) => handlePutDelivery(req, env, rid, actor, org, deal!, booking!),
+    },
+  },
+  {
+    re: /^deals\/([^/]+)\/report-links$/,
+    parsers: [parseDealPublicId],
+    methods: { POST: (req, env, rid, actor, org, [id]) => handleCreateReportLink(req, env, rid, actor, org, id!) },
+  },
+  {
+    re: /^deals\/([^/]+)\/report-links\/([^/]+)$/,
+    parsers: [parseDealPublicId, parseReportLinkPublicId],
+    methods: {
+      DELETE: (_req, env, rid, actor, org, [deal, link]) => handleRevokeReportLink(env, rid, actor, org, deal!, link!),
+    },
+  },
   {
     re: /^pipeline$/,
     parsers: [],
@@ -153,6 +204,8 @@ const ROUTES: RouteDef[] = [
 ];
 
 const ORG_PREFIX_RE = /^\/v1\/organizations\/([^/]+)\/(.+)$/;
+/** RB2: the sponsor report — public, no actor; the token is the credential. */
+const PUBLIC_REPORT_RE = /^\/ingress\/rateboard\/r\/([^/]+)$/;
 
 function unauthenticated(requestId: string): Response {
   return errorResponse("unauthenticated", "Authentication required", 401, requestId);
@@ -182,6 +235,11 @@ export async function route(request: Request, env: Env): Promise<Response> {
   const requestId = resolveRequestId(request);
   try {
     if (url.pathname === "/health" && request.method === "GET") return handleHealth(env, requestId);
+    const report = url.pathname.match(PUBLIC_REPORT_RE);
+    if (report) {
+      if (request.method !== "GET") return methodNotAllowed(requestId);
+      return handlePublicReport(env, requestId, report[1]!);
+    }
     const response = await routeOrg(request, env, requestId, url.pathname);
     return response ?? notFound(requestId, url.pathname);
   } catch {

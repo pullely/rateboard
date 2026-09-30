@@ -7,6 +7,7 @@ import type {
   DealFields,
   DealRepository,
   Issue,
+  IssueFields,
   MoveStageInput,
   Publication,
   PublicationFields,
@@ -259,6 +260,28 @@ export function createDealRepository(executor: SqlExecutor): DealRepository {
       return row ? mapIssue(row) : null;
     },
 
+    async updateIssue(orgId, id, f: IssueFields, now) {
+      const row = await one(
+        `UPDATE OR IGNORE deal_issues SET title = $3, publish_on = $4, status = $5, updated_at = $6
+          WHERE org_id = $1 AND id = $2
+            AND ($5 <> 'cancelled' OR NOT EXISTS (
+                  SELECT 1 FROM deal_bookings b JOIN deal_slots s ON s.id = b.slot_id AND s.org_id = b.org_id
+                   WHERE s.issue_id = deal_issues.id AND b.org_id = deal_issues.org_id AND b.released_at IS NULL))
+          RETURNING id`,
+        [orgId, id, f.title, f.publishOn, f.status, now],
+      );
+      return row ? repo.getIssue(orgId, id) : null;
+    },
+
+    async countLiveBookingsForIssue(orgId, id) {
+      const row = await one(
+        `SELECT COUNT(*) AS n FROM deal_bookings b JOIN deal_slots s ON s.id = b.slot_id AND s.org_id = b.org_id
+          WHERE b.org_id = $1 AND s.issue_id = $2 AND b.released_at IS NULL`,
+        [orgId, id],
+      );
+      return Number(row?.n ?? 0);
+    },
+
     async createSlot(input) {
       const row = await one(
         `INSERT INTO deal_slots
@@ -405,9 +428,16 @@ export function createDealRepository(executor: SqlExecutor): DealRepository {
         ? ` AND EXISTS (SELECT 1 FROM deal_bookings b
                          WHERE b.deal_id = deal_deals.id AND b.org_id = deal_deals.org_id AND b.released_at IS NULL)`
         : "";
+      // RB2: every live booking must carry a delivery before `delivered`.
+      const allDelivered = input.requireAllDelivered
+        ? ` AND NOT EXISTS (SELECT 1 FROM deal_bookings b
+                             WHERE b.deal_id = deal_deals.id AND b.org_id = deal_deals.org_id AND b.released_at IS NULL
+                               AND NOT EXISTS (SELECT 1 FROM deal_deliveries v
+                                                WHERE v.booking_id = b.id AND v.org_id = b.org_id))`
+        : "";
       const row = await one(
         `UPDATE deal_deals SET stage = $4, stage_changed_at = $5, updated_at = $5
-          WHERE org_id = $1 AND id = $2 AND stage = $3${liveBooking}
+          WHERE org_id = $1 AND id = $2 AND stage = $3${liveBooking}${allDelivered}
           RETURNING id`,
         [input.orgId, input.dealId, input.from, input.to, input.now],
       );

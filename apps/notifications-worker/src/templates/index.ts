@@ -169,10 +169,67 @@ const renderInvitationAccepted: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+/**
+ * Rateboard (RB2): the insertion order, emailed to the sponsor's contact by
+ * deal-worker. `templateData` carries only what the sponsor is being sent
+ * anyway — the IO number, the deal title, the total, the due date, the terms
+ * and one line per placement — never a member's identity or an internal id.
+ */
+const renderDealIoSent: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const number = str(data, "ioNumber") || "Insertion order";
+  const deal = str(data, "dealTitle");
+  const sponsor = str(data, "sponsorName");
+  const contact = str(data, "contactName");
+  const total = str(data, "total");
+  const due = str(data, "paymentDueOn");
+  const terms = str(data, "terms");
+  const placements = str(data, "placements")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const subject = `${number}${deal ? `: ${deal}` : ""}`;
+  const greeting = contact ? `Hi ${contact},` : "Hello,";
+  const lead = `Here is insertion order ${number}${sponsor ? ` for ${sponsor}` : ""}${deal ? ` (${deal})` : ""}.`;
+  const lines = [
+    total ? `Total: ${total}` : "",
+    due ? `Payment due: ${due}` : "",
+  ].filter((l) => l.length > 0);
+
+  const text = [
+    greeting,
+    "",
+    lead,
+    "",
+    ...(placements.length ? ["Placements:", ...placements.map((p) => `- ${p}`), ""] : []),
+    ...lines,
+    ...(terms ? ["", "Terms:", terms] : []),
+    "",
+    "Reply to this email to confirm, and the creator will record the order as signed.",
+  ].join("\n");
+
+  const html = htmlShell(
+    escapeHtml(number),
+    [
+      `<p style="margin:0 0 12px;font-size:14px;">${escapeHtml(greeting)}</p>`,
+      `<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`,
+      placements.length
+        ? `<ul style="margin:0 0 16px;padding-left:18px;font-size:13px;">${placements.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul>`
+        : "",
+      lines.map((l) => `<p style="margin:0 0 6px;font-size:14px;font-weight:600;">${escapeHtml(l)}</p>`).join(""),
+      terms ? `<p style="margin:16px 0 4px;font-size:13px;font-weight:600;">Terms</p><p style="margin:0 0 16px;font-size:13px;white-space:pre-wrap;">${escapeHtml(terms)}</p>` : "",
+      '<p style="margin:16px 0 0;font-size:13px;color:#6b6b80;">Reply to this email to confirm, and the creator will record the order as signed.</p>',
+    ].join(""),
+    escapeHtml(brand ? `Sent with ${brand}` : "Sent on behalf of the creator."),
+  );
+  return { subject: brand ? `[${brand}] ${subject}` : subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
   "auth.magic_link": renderMagicLink,
   "invitation.created": renderInvitationCreated,
   "invitation.accepted": renderInvitationAccepted,
+  "deal.io.sent": renderDealIoSent,
 };
 
 /**

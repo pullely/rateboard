@@ -192,6 +192,18 @@ export interface MoveStageInput {
   now: string;
   /** `booked` needs at least one live booking; the check is inside the UPDATE. */
   requireLiveBooking: boolean;
+  /**
+   * From RB2, `delivered` needs a delivery on every live booking; the
+   * `NOT EXISTS` is inside the same UPDATE, so a release or a new booking
+   * racing the move cannot slip between a check and the write.
+   */
+  requireAllDelivered?: boolean;
+}
+
+export interface IssueFields {
+  title: string;
+  publishOn: string;
+  status: string;
 }
 
 export interface DealRepository {
@@ -204,6 +216,15 @@ export interface DealRepository {
   /** null when the publication already has an issue with that title. */
   createIssue(input: { id: string; orgId: string; publicationId: string; title: string; publishOn: string; createdBy: string | null; now: string }): Promise<Issue | null>;
   getIssue(orgId: string, id: string): Promise<Issue | null>;
+  /**
+   * Edit an issue (RB2). Cancelling is refused, inside the same statement,
+   * while any of its slots holds a live booking; a title that collides with
+   * another issue of the publication changes nothing. null = absent, refused
+   * or a collision (the caller has read the row first and tells them apart).
+   */
+  updateIssue(orgId: string, id: string, fields: IssueFields, now: string): Promise<Issue | null>;
+  /** Live bookings on the issue's slots. */
+  countLiveBookingsForIssue(orgId: string, id: string): Promise<number>;
   /** null when the issue already has a slot with that label. */
   createSlot(input: SlotFields & { id: string; orgId: string; issueId: string; publicationId: string; createdBy: string | null; now: string }): Promise<Slot | null>;
   getSlot(orgId: string, id: string): Promise<Slot | null>;

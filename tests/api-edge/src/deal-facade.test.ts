@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isDealRoute, handleDealRoute } from "@api-edge/deal-facade";
+import { isDealRoute, handleDealRoute, isDealIngressRoute, handleDealIngressRoute } from "@api-edge/deal-facade";
 import { isOrgRoute } from "@api-edge/org-facade";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,6 +59,13 @@ describe("api-edge deal facade", () => {
       "/v1/organizations/org_a/deals/rbd_e/bookings",
       "/v1/organizations/org_a/deals/rbd_e/bookings/rbb_f",
       "/v1/organizations/org_a/pipeline",
+      // RB2
+      "/v1/organizations/org_a/issues/rbi_c",
+      "/v1/organizations/org_a/deals/rbd_e/insertion-order",
+      "/v1/organizations/org_a/deals/rbd_e/insertion-order/send",
+      "/v1/organizations/org_a/deals/rbd_e/bookings/rbb_f/delivery",
+      "/v1/organizations/org_a/deals/rbd_e/report-links",
+      "/v1/organizations/org_a/deals/rbd_e/report-links/rbr_g",
     ]) {
       expect(isDealRoute(p)).toBe(true);
     }
@@ -67,7 +74,10 @@ describe("api-edge deal facade", () => {
       "/v1/organizations/org_a/projects",
       "/v1/organizations/org_a/members",
       "/v1/organizations/org_a/issues",
-      "/v1/organizations/org_a/issues/rbi_c",
+      "/v1/organizations/org_a/deals/rbd_e/insertion-order/sign",
+      "/v1/organizations/org_a/deals/rbd_e/report-links/rbr_g/token",
+      "/v1/organizations/org_a/deals/rbd_e/bookings/rbb_f/delivery/x",
+      "/ingress/rateboard/r/abc",
       "/v1/organizations/org_a/publications/rbp_b/issues/rbi_c",
       "/v1/organizations/org_a/deals/rbd_e/history",
       "/v1/organizations/org_a/inventoryx",
@@ -135,6 +145,47 @@ describe("api-edge deal facade", () => {
       "/v1/organizations/org_a/inventory",
     );
     expect(response.status).toBe(503);
+  });
+
+  it("RB2: claims exactly the public report lane, and it is not an authenticated deal route", () => {
+    expect(isDealIngressRoute("/ingress/rateboard/r/abc_DEF-123")).toBe(true);
+    for (const p of ["/ingress/rateboard/r", "/ingress/rateboard/r/", "/ingress/rateboard/r/a/b", "/ingress/other/r/abc", "/v1/ingress/rateboard/r/abc"]) {
+      expect(isDealIngressRoute(p)).toBe(false);
+    }
+  });
+
+  it("RB2: forwards the report lane with NO actor headers and never calls identity", async () => {
+    const id = identity("usr_abc123");
+    const worker = recorder(() => Response.json({ data: { report: {} }, meta: { requestId: "r", cursor: null } }));
+    const request = new Request("https://api.example.com/ingress/rateboard/r/tok_tok", {
+      headers: { authorization: "Bearer sps_ses_abc.secret", "x-actor-subject-id": "usr_spoofed", "x-actor-subject-type": "user" },
+    });
+    const response = await handleDealIngressRoute(
+      request,
+      { IDENTITY_WORKER: id.fetcher, DEAL_WORKER: worker.fetcher, ENVIRONMENT: "test" },
+      "req_test",
+      "/ingress/rateboard/r/tok_tok",
+    );
+    expect(response.status).toBe(200);
+    expect(id.calls).toHaveLength(0);
+    expect(worker.calls).toHaveLength(1);
+    expect(worker.calls[0]!.url).toBe("https://deal.internal/ingress/rateboard/r/tok_tok");
+    const headers = new Headers(worker.calls[0]!.init.headers);
+    expect(headers.get("x-actor-subject-id")).toBeNull();
+    expect(headers.get("x-actor-subject-type")).toBeNull();
+    expect(headers.get("authorization")).toBeNull();
+  });
+
+  it("RB2: the report lane is GET only", async () => {
+    const worker = recorder(() => Response.json({}));
+    const response = await handleDealIngressRoute(
+      new Request("https://api.example.com/ingress/rateboard/r/x", { method: "POST" }),
+      { DEAL_WORKER: worker.fetcher, ENVIRONMENT: "test" },
+      "req_test",
+      "/ingress/rateboard/r/x",
+    );
+    expect(response.status).toBe(405);
+    expect(worker.calls).toHaveLength(0);
   });
 
   it("wrangler.jsonc binds DEAL_WORKER on stage and prod", () => {

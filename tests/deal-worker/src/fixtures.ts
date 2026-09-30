@@ -32,13 +32,13 @@ export async function ok(res: Response, status = 200): Promise<Record<string, an
 /** A newsletter with one issue holding a primary and a secondary slot, and a deal with a new sponsor. */
 export async function seed(
   w: TestWorld,
-  opts: { org?: string; who?: string; publishOn?: string; sponsorName?: string; dealTitle?: string } = {},
+  opts: { org?: string; who?: string; publishOn?: string; sponsorName?: string; dealTitle?: string; publicationName?: string } = {},
 ): Promise<{ publication: any; issue: any; primary: any; secondary: any; deal: any }> {
   const org = opts.org ?? ORG;
   const who = opts.who ?? OWNER;
   const { publication } = await ok(
     await send(w, `/v1/organizations/${org}/publications`, who, {
-      name: "The Stack Weekly",
+      name: opts.publicationName ?? "The Stack Weekly",
       kind: "newsletter",
       niche: "tech",
       audienceSize: 24_000,
