@@ -74,6 +74,31 @@ importers:
         specifier: ^4.14.4
         version: 4.137.0(@cloudflare/workers-types@4.20260702.1)
 
+  apps/bench-worker:
+    dependencies:
+      '@saas/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@saas/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250508.0
+        version: 4.20260702.1
+      '@saas/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@saas/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.14.4
+        version: 4.137.0(@cloudflare/workers-types@4.20260702.1)
+
   apps/billing-worker:
     dependencies:
       '@polar-sh/sdk':
@@ -721,6 +746,40 @@ importers:
       ts-jest:
         specifier: ^29.3.4
         version: 29.4.13(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.43))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  tests/bench-worker:
+    dependencies:
+      '@saas/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@saas/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250508.0
+        version: 4.20260702.1
+      '@saas/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@saas/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.4
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@22.20.4)
+      ts-jest:
+        specifier: ^29.3.4
+        version: 29.4.13(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.20.4))(typescript@5.9.3)
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -11756,7 +11815,7 @@ snapshots:
 
   node-abi@3.96.0:
     dependencies:
-      semver: 7.8.0
+      semver: 7.8.5
     optional: true
 
   node-addon-api@4.3.0:
