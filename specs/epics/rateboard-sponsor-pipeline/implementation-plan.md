@@ -11,7 +11,7 @@ one day. RB2 and RB3 land the next day. Each milestone's tests run green
 locally before its pull request opens, because every push to a pull request
 spends mints.
 
-## RB0 — the spec
+## RB0 — the spec ✅
 
 This doc set, merged to `main` and attached to the epic with `orun spec push`.
 
@@ -19,7 +19,7 @@ This doc set, merged to `main` and attached to the epic with `orun spec push`.
 - the five documents are on `main`
 - `orun spec list --epic rateboard-sponsor-pipeline` shows them
 
-## RB1 — the deal pipeline and the inventory calendar
+## RB1 — the deal pipeline and the inventory calendar ✅
 
 This milestone builds the `deal` bounded context end to end:
 
@@ -54,6 +54,8 @@ This milestone builds the `deal` bounded context end to end:
 - `tests/deal-worker` over real SQLite: the HTTP flow, the state machine, the
   double-booking refusal including a concurrent race of many claims on one slot
   (exactly one 201), the release rules, the trap-22 pins, and tenant isolation.
+
+Landed as #10 (01912e3); deploy run 35935783407 green 66/66; stage and prod verified.
 
 **Done when**
 - on stage a signed-in user creates an organization (201)

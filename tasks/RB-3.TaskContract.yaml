@@ -1,0 +1,45 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: RB-3
+spec:
+  goal: A booked deal gets a numbered insertion order emailed to the sponsor, a delivery with stats on every booking before it can be marked delivered, and a revocable no-login report link for the sponsor.
+  # Component refs, fully qualified (runbook trap 15). deal-worker, api-edge,
+  # notifications-worker, events-worker and the console carry the feature; db,
+  # contracts and sdk change, so every worker that bundles packages/db or
+  # packages/contracts gets a redeploy marker (trap 17).
+  affects:
+    - default/rateboard/db
+    - default/rateboard/db-tests
+    - default/rateboard/db-migrate
+    - default/rateboard/contracts
+    - default/rateboard/contracts-tests
+    - default/rateboard/sdk
+    - default/rateboard/deal-worker
+    - default/rateboard/deal-worker-tests
+    - default/rateboard/api-edge
+    - default/rateboard/api-edge-tests
+    - default/rateboard/events-worker
+    - default/rateboard/notifications-worker
+    - default/rateboard/notifications-worker-tests
+    - default/rateboard/identity-worker
+    - default/rateboard/membership-worker
+    - default/rateboard/web-console-next
+    - default/rateboard/web-console-next-tests
+    - default/rateboard/admin-worker
+    - default/rateboard/billing-worker
+    - default/rateboard/config-worker
+    - default/rateboard/integrations-worker
+    - default/rateboard/metering-worker
+    - default/rateboard/policy-worker
+    - default/rateboard/projects-worker
+    - default/rateboard/webhooks-worker
+  doneWhen:
+    - migration 210_deal_paperwork replays twice green on node:sqlite and is applied on stage and prod
+    - IO numbers are unique per org under a concurrent burst (IO-0001, IO-0002, ...) and send is accepted by notifications
+    - booked to delivered is 409 undelivered_bookings until every live booking has a delivery
+    - the report link opens with no session; unknown, revoked and expired tokens answer the same 404
+    - report tokens are stored only as SHA-256; at most one live link per deal
+    - PATCH issues/{rbi} edits an issue and refuses to cancel one with live bookings
+    - tests/deal-worker covers all of it on real SQLite and is green in CI
+  gates: []
