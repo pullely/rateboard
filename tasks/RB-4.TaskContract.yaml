@@ -1,0 +1,47 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: RB-4
+spec:
+  goal: Creators who opt in see anonymised rate benchmarks by niche, audience band and ad format, published only under the controls of epic design §6, and can revoke at any time.
+  # Component refs, fully qualified (runbook trap 15). bench-worker is new;
+  # policy-engine gains bench.* actions, so policy-worker and every worker that
+  # bundles packages/db, packages/contracts or packages/policy-engine gets a
+  # redeploy marker (trap 17).
+  affects:
+    - default/rateboard/bench-worker
+    - default/rateboard/bench-worker-tests
+    - default/rateboard/db
+    - default/rateboard/db-tests
+    - default/rateboard/db-migrate
+    - default/rateboard/contracts
+    - default/rateboard/contracts-tests
+    - default/rateboard/sdk
+    - default/rateboard/policy-engine
+    - default/rateboard/policy-engine-tests
+    - default/rateboard/policy-worker
+    - default/rateboard/api-edge
+    - default/rateboard/api-edge-tests
+    - default/rateboard/deal-worker
+    - default/rateboard/deal-worker-tests
+    - default/rateboard/events-worker
+    - default/rateboard/notifications-worker
+    - default/rateboard/identity-worker
+    - default/rateboard/membership-worker
+    - default/rateboard/web-console-next
+    - default/rateboard/web-console-next-tests
+    - default/rateboard/admin-worker
+    - default/rateboard/billing-worker
+    - default/rateboard/config-worker
+    - default/rateboard/integrations-worker
+    - default/rateboard/metering-worker
+    - default/rateboard/projects-worker
+    - default/rateboard/webhooks-worker
+  doneWhen:
+    - the eight tests of design 6.7 pass in CI, including snapshot and query differencing and the recovery attempt
+    - migration 220_bench_core replays twice green on node:sqlite and is applied on stage and prod
+    - a cell publishes only with k = 5 independent contributors, as rounded p25/p50/p75 and a contributor band
+    - revoking removes the org from the next run's input, and a change of one org withholds the cell
+    - BENCH_MIN_OPTIN_DAYS is set on stage only; prod ignores it and keeps the weekly cron
+    - on stage six opted-in orgs publish a cell; one revoke withholds it; a non-contributor gets 404
+  gates: []

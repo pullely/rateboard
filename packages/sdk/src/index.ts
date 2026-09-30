@@ -23,6 +23,7 @@ import { NotificationsClient } from "./notifications.js";
 import { OrganizationsClient } from "./organizations.js";
 import { ProjectsClient } from "./projects.js";
 import { DealClient } from "./deal.js";
+import { BenchClient } from "./bench.js";
 import { SecurityEventsClient } from "./securityEvents.js";
 import { WebhooksClient } from "./webhooks.js";
 import { Transport, type ClientOptions } from "./transport.js";
@@ -31,6 +32,7 @@ export class Rateboard {
   readonly organizations: OrganizationsClient;
   readonly projects: ProjectsClient;
   readonly deals: DealClient;
+  readonly bench: BenchClient;
   readonly environments: EnvironmentsClient;
   readonly memberships: MembershipsClient;
   readonly apiKeys: ApiKeysClient;
@@ -51,6 +53,7 @@ export class Rateboard {
     this.organizations = new OrganizationsClient(this.transport);
     this.projects = new ProjectsClient(this.transport);
     this.deals = new DealClient(this.transport);
+    this.bench = new BenchClient(this.transport);
     this.environments = new EnvironmentsClient(this.transport);
     this.memberships = new MembershipsClient(this.transport);
     this.apiKeys = new ApiKeysClient(this.transport);
@@ -70,6 +73,7 @@ export class Rateboard {
 export { OrganizationsClient } from "./organizations.js";
 export { ProjectsClient } from "./projects.js";
 export { DealClient } from "./deal.js";
+export { BenchClient } from "./bench.js";
 export { EnvironmentsClient } from "./environments.js";
 export { MembershipsClient } from "./memberships.js";
 export {

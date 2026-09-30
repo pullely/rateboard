@@ -9,6 +9,7 @@ export * from "./policy.js";
 export * from "./events.js";
 export * from "./projects.js";
 export * from "./deal.js";
+export * from "./bench.js";
 export * from "./config.js";
 export * from "./security-events.js";
 export * from "./api-keys.js";
