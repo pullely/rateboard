@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | RB0 — the spec | ✅ merged 4f2e279, pushed with `orun spec push` | #9 |
 | RB1 — the deal pipeline and the inventory calendar | ✅ merged 01912e3; `main` deploy run 35935783407 green 66/66; stage smoke green (org 201, double-booking 409, burst of 6 → one 201), prod 401s and `DEBUG_DELIVERY` off | #10 |
 | RB2 — insertion orders, proof of delivery and the sponsor report link | ✅ merged a58ccee; `main` deploy run 36657548641 green 60/60 (dev 21, stage 19, prod 19, plan 1); stage smoke green (IO-0001…IO-0006 under a burst of 6, delivered refused 2→1→allowed, report link 200 with no login, unknown/malformed/revoked/expired → identical 404, IO email 202 accepted), prod 401 on all 8 routes, `DEBUG_DELIVERY` off | #11 |
-| RB3 — opt-in rate benchmarks | In review | this PR |
+| RB3 — opt-in rate benchmarks | ✅ merged 1e1d34d; `main` deploy run 36660379116 green 69/69 on attempt 2 (dev 26, stage 21, prod 21, plan 1; attempt 1 lost `webhooks-worker · stage` to an OIDC-exchange timeout); the eight §6.7 tests green in CI; stage publish → revoke → withhold verified | #12 |
 
 ## Departures from the design
 
@@ -128,3 +128,36 @@ the code departed from `design.md`.
 - **Also fixed:** the inventory's slot order was `created_at, id`, so two
   slots created in the same millisecond came back in random order (an RB1 test
   flaked on it). It is now `created_at, rowid`.
+
+## At ship (2026-09-30) — the trap-41 verification, after RB3's deploy
+
+Stage (`rateboard-api-edge-stage`), each milestone driven end to end with
+fresh orgs (sign-in via stage `DEBUG_DELIVERY`, org create 201):
+
+- **RB1:** publication, issue with two slots, deal lead → pitched; `booked`
+  refused `409 no_bookings`; book 201; a second deal on the same slot
+  `409 slot_already_booked`; booked → delivered → paid with the full history;
+  a second user gets 404.
+- **RB2:** six concurrent insertion-order creates → `IO-0001` … `IO-0006`, all
+  distinct; a second IO `409`; send → `202`, accepted by notifications-worker
+  (the row then fails downstream for want of an owned sending domain — trap
+  27); `delivered` refused with 2, then 1, undelivered bookings, then allowed;
+  the report link opens with no session and carries no price, note, contact,
+  id or IO; unknown, malformed, revoked and expired tokens (expiry moved into
+  the past in stage D1) give four byte-identical 404 bodies; a second user
+  gets 404 on every RB2 route.
+- **RB3** (stage override on): seven users; orgs 1–6 contribute to
+  `tech / 15k_50k / nl_primary`; user 1 owns org 1 and is an admin of org 1b.
+  After one run: exactly that cell published (`5–9`, percentiles at two
+  significant figures, no count, no row); the `nl_secondary` cell — five orgs
+  but four independent people — withheld, byte-identical to an empty cell;
+  partial keys `422`; a non-contributing org `404`. Org 6 revoked; the next
+  run withheld the published cell. Operator totals for the two runs:
+  6 contributors / 1 published / 1 withheld, then 5 / 0 / 2.
+
+Prod (`rateboard-api-edge-prod`): `/health` 200; all 14 product routes of
+RB1–RB3 answer 401 unauthenticated and unknown paths 404; the public report
+lane answers 404 to an unknown token; `DEBUG_DELIVERY` is off.
+`rateboard-bench-worker-prod`'s live settings carry only `ENVIRONMENT=prod`
+(no `BENCH_MIN_OPTIN_DAYS`) and its only schedule is `0 4 * * 1`; its
+`workers.dev` hostname is disabled.
