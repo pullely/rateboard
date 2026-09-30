@@ -29,7 +29,9 @@ describe("the double-booking guarantee", () => {
     const inv = await ok(await get(w, `/v1/organizations/${ORG}/inventory?from=2026-10-01&to=2026-10-31`, VIEWER));
     expect(inv.issues).toHaveLength(1);
     expect(inv.issues[0].id).toBe(issue.id);
-    const [p, s] = inv.issues[0].slots;
+    // By label: two slots created in the same millisecond must not depend on id order.
+    const p = inv.issues[0].slots.find((x: { label: string }) => x.label === "Primary");
+    const s = inv.issues[0].slots.find((x: { label: string }) => x.label === "Secondary");
     expect(p.booking).toMatchObject({ dealId: deal.id, sponsorName: "Acme Analytics", dealStage: "lead", priceCents: 120_000 });
     expect(s.booking).toBeNull();
 

@@ -133,7 +133,9 @@ export async function handleReadCell(request: Request, env: Env, requestId: stri
   if (!niche || !(BENCH_NICHES as readonly string[]).includes(niche)) fields.niche = [`Required, one of ${BENCH_NICHES.join(", ")}`];
   if (!band || !(BENCH_BANDS as readonly string[]).includes(band)) fields.band = [`Required, one of ${BENCH_BANDS.join(", ")}`];
   if (!format || !(BENCH_FORMATS as readonly string[]).includes(format)) fields.format = [`Required, one of ${BENCH_FORMATS.join(", ")}`];
-  for (const k of q.keys()) if (!["niche", "band", "format"].includes(k)) fields[k] = ["Unknown parameter"];
+  q.forEach((_v, k) => {
+    if (!["niche", "band", "format"].includes(k)) fields[k] = ["Unknown parameter"];
+  });
   for (const k of ["niche", "band", "format"]) if (q.getAll(k).length > 1) fields[k] = ["Give exactly one value"];
   return withDb(env, requestId, actor, orgId, "bench.read", async (db) => {
     if (!(await contributing(db, orgId))) return notFound(requestId);

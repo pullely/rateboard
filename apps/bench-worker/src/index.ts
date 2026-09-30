@@ -21,7 +21,7 @@ export default {
       (async () => {
         try {
           const report = await runAggregate(db.bench, { now: new Date().toISOString(), minOptinDays: minOptinDays(env) });
-          console.log(
+          console.warn(
             JSON.stringify({
               level: "info",
               msg: "bench aggregate",

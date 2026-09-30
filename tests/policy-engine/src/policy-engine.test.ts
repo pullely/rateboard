@@ -686,8 +686,9 @@ describe("listEffectivePermissions", () => {
     expect(result.derivedScope.orgId).toBe("org_1");
 
     const allowed = result.permissions.filter((p) => p.allow);
-    // 31 baseline actions + the two deal.* actions RB1 adds.
-    expect(allowed.length).toBe(33);
+    // 31 baseline actions + the two deal.* actions RB1 adds + the two bench.* actions RB3 adds.
+    expect(allowed.length).toBe(35);
+    expect(allowed.map((p) => p.action)).toEqual(expect.arrayContaining(["bench.contribute", "bench.read"]));
   });
 
   it("returns limited permissions for viewer", () => {
@@ -699,6 +700,7 @@ describe("listEffectivePermissions", () => {
     const result = listEffectivePermissions(input);
     const allowed = result.permissions.filter((p) => p.allow);
     expect(allowed.map((p) => p.action).sort()).toEqual([
+      "bench.read",
       "deal.read",
       "organization.config.read",
       "organization.integration.read",
@@ -708,6 +710,19 @@ describe("listEffectivePermissions", () => {
       "project.list",
       "project.webhook.read",
     ]);
+  });
+
+  it("RB3: bench.contribute is owner/admin only; bench.read is every org role but billing_admin", () => {
+    const actions = (role: string) =>
+      listEffectivePermissions({ subject, resource: { kind: "organization", orgId: "org_1" }, context: { memberships: [orgFact(role as never, "org_1")] } })
+        .permissions.filter((p) => p.allow)
+        .map((p) => p.action);
+    for (const role of ["owner", "admin"]) expect(actions(role)).toEqual(expect.arrayContaining(["bench.contribute", "bench.read"]));
+    for (const role of ["builder", "viewer"]) {
+      expect(actions(role)).toContain("bench.read");
+      expect(actions(role)).not.toContain("bench.contribute");
+    }
+    expect(actions("billing_admin")).not.toContain("bench.read");
   });
 
   it("returns billing permissions for billing_admin", () => {
