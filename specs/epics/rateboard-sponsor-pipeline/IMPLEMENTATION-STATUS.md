@@ -7,8 +7,8 @@ the code departed from `design.md`.
 |---|---|---|
 | RB0 — the spec | ✅ merged 4f2e279, pushed with `orun spec push` | #9 |
 | RB1 — the deal pipeline and the inventory calendar | ✅ merged 01912e3; `main` deploy run 35935783407 green 66/66; stage smoke green (org 201, double-booking 409, burst of 6 → one 201), prod 401s and `DEBUG_DELIVERY` off | #10 |
-| RB2 — insertion orders, proof of delivery and the sponsor report link | In review | this PR |
-| RB3 — opt-in rate benchmarks | | |
+| RB2 — insertion orders, proof of delivery and the sponsor report link | ✅ merged a58ccee; `main` deploy run 36657548641 green 60/60 (dev 21, stage 19, prod 19, plan 1); stage smoke green (IO-0001…IO-0006 under a burst of 6, delivered refused 2→1→allowed, report link 200 with no login, unknown/malformed/revoked/expired → identical 404, IO email 202 accepted), prod 401 on all 8 routes, `DEBUG_DELIVERY` off | #11 |
+| RB3 — opt-in rate benchmarks | In review | this PR |
 
 ## Departures from the design
 

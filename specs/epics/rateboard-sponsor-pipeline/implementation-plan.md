@@ -72,7 +72,9 @@ Landed as #10 (01912e3); deploy run 35935783407 green 66/66; stage and prod veri
   `DEBUG_DELIVERY` is off
 - `tests/deal-worker` is green in CI, including the race test
 
-## RB2 — insertion orders, proof of delivery and the sponsor report link
+## RB2 — insertion orders, proof of delivery and the sponsor report link ✅
+
+Landed as #11 (a58ccee); deploy run 36657548641 green 60/60; stage and prod verified.
 
 - Migration `210_deal_paperwork`: `deal_insertion_orders`, `deal_deliveries`,
   `deal_report_links` (design §1.8), with every write through `RETURNING`
